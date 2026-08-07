@@ -1,154 +1,260 @@
 ---
 import Base from '../layouts/Base.astro';
-import TemperatureChart from '../components/TemperatureChart.astro';
-import PrecipitationChart from '../components/PrecipitationChart.astro';
-import { monthlyAggregates, dayLabel } from '../lib/chart.js';
-import data from '../../data/daily.json';
+import SeasonChart from '../components/SeasonChart.astro';
+import { dayLabel } from '../lib/chart.js';
 
-// Imported at build time — the deployed site is fully static, no runtime fetch.
-const { daily, units, location, generated_at, source, source_note } = data;
+// Resolved at build time — the deployed page is static, no runtime fetch.
+const modules = import.meta.glob('../../data/era5/*.json', { eager: true });
 
-const mean = daily.temperature_2m_mean;
-const high = daily.temperature_2m_max;
-const low = daily.temperature_2m_min;
-const precipitation = daily.precipitation_sum;
-const n = daily.time.length;
-const last = n - 1;
+const SEASON_NAMES = {
+  DJF: 'Winter',
+  MAM: 'Spring',
+  JJA: 'Summer',
+  SON: 'Autumn',
+};
+const SEASON_ORDER = Object.keys(SEASON_NAMES);
 
-const months = monthlyAggregates(daily);
+const manifest = modules['../../data/era5/index.json'].default;
+
+const seasonFiles = Object.entries(modules)
+  .filter(([path]) => !path.endsWith('index.json'))
+  .map(([, module]) => module.default);
+
+// One panel per season, years ascending so the newest is the focus.
+const seasons = SEASON_ORDER.map((code) => ({
+  code,
+  name: SEASON_NAMES[code],
+  years: seasonFiles
+    .filter((file) => file.season === code)
+    .sort((a, b) => a.season_year - b.season_year),
+})).filter((season) => season.years.length > 0);
 
 const average = (values) => values.reduce((acc, v) => acc + v, 0) / values.length;
-const total = (values) => values.reduce((acc, v) => acc + v, 0);
-
-const latestValue = mean[last];
-const trailingMean = average(mean.slice(-30));
-const delta = latestValue - trailingMean;
-
-const hottest = high.indexOf(Math.max(...high));
-const coldest = low.indexOf(Math.min(...low));
-
-const unit = units.temperature_2m_mean;
-const rainUnit = units.precipitation_sum;
-const wetDays = precipitation.filter((v) => v >= 1).length;
-
 const one = (v) => v.toFixed(1);
 const signed = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}`;
 
-const generated = new Intl.DateTimeFormat('en-GB', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'UTC',
-}).format(new Date(generated_at));
+// The season holding the most recent observation leads the page.
+const latestFile = seasonFiles.reduce((a, b) =>
+  b.time[b.days - 1] > a.time[a.days - 1] ? b : a
+);
+const current = seasons.find((season) => season.code === latestFile.season);
+const previous = current.years.length > 1 ? current.years[current.years.length - 2] : null;
+
+const lastIndex = latestFile.days - 1;
+const latestDate = latestFile.time[lastIndex];
+const latestMean = latestFile.tasmean[lastIndex];
+
+// Same index means the same calendar day, so this compares like with like.
+const sameDayLastYear = previous ? previous.tasmean[lastIndex] : null;
+
+// Season-to-date, clipped to the same window in both years.
+const toDate = average(latestFile.tasmean);
+const priorToDate = previous ? average(previous.tasmean.slice(0, latestFile.days)) : null;
+
+const warmestIndex = latestFile.tasmax.indexOf(Math.max(...latestFile.tasmax));
+const coolestIndex = latestFile.tasmin.indexOf(Math.min(...latestFile.tasmin));
+
+const currentLabel = `${current.name} ${latestFile.season_year}`;
 ---
 
 <Base
   title="Barcelona Climate Tracker"
-  description="Daily temperature and monthly precipitation for Barcelona, rebuilt every morning."
+  description="Daily ERA5 temperature for Barcelona, compared season by season across years."
 >
   <header class="page-header">
     <h1>Barcelona Climate Tracker</h1>
     <p>
-      Twelve months of daily temperature and monthly rainfall for {location.name}
-      ({location.latitude}°N, {location.longitude}°E). The page is a static build — data is
-      baked in at deploy time and refreshed each morning.
+      Daily minimum, mean and maximum 2m temperature for {manifest.location.name}
+      ({manifest.location.latitude}°N, {manifest.location.longitude}°E), from the
+      {manifest.source}. Each season is charted on its own so years can be laid over one
+      another day for day.
     </p>
-    {
-      source === 'synthetic' && (
-        <p class="notice">
-          <strong>Placeholder data.</strong> {source_note} The chart shapes and the pipeline are
-          real; the numbers are not. Swap the generator for a live source before reading anything
-          into them.
-        </p>
-      )
-    }
   </header>
 
   <section class="summary">
     <div class="card hero">
-      <p class="stat-label">Mean temperature, {dayLabel(daily.time[last])}</p>
-      <p class="stat-value">{one(latestValue)}{unit}</p>
-      <p class="stat-detail">{signed(delta)}{unit} against the trailing 30-day mean</p>
+      <p class="stat-label">Mean temperature, {dayLabel(latestDate)}</p>
+      <p class="stat-value">{one(latestMean)}°C</p>
+      <p class="stat-detail">
+        {
+          sameDayLastYear != null
+            ? `${signed(latestMean - sameDayLastYear)}°C against the same day in ${previous.season_year}`
+            : 'No prior year on record for this day'
+        }
+      </p>
     </div>
 
     <div class="card">
-      <p class="stat-label">Warmest day</p>
-      <p class="stat-value">{one(high[hottest])}{unit}</p>
-      <p class="stat-detail">{dayLabel(daily.time[hottest])}</p>
+      <p class="stat-label">{currentLabel} so far</p>
+      <p class="stat-value">{one(toDate)}°C</p>
+      <p class="stat-detail">
+        {
+          priorToDate != null
+            ? `${signed(toDate - priorToDate)}°C against ${previous.season_year} over the same ${latestFile.days} days`
+            : `Mean across ${latestFile.days} days`
+        }
+      </p>
     </div>
 
     <div class="card">
-      <p class="stat-label">Coldest day</p>
-      <p class="stat-value">{one(low[coldest])}{unit}</p>
-      <p class="stat-detail">{dayLabel(daily.time[coldest])}</p>
+      <p class="stat-label">Warmest day, {currentLabel}</p>
+      <p class="stat-value">{one(latestFile.tasmax[warmestIndex])}°C</p>
+      <p class="stat-detail">{dayLabel(latestFile.time[warmestIndex])}</p>
     </div>
 
     <div class="card">
-      <p class="stat-label">Annual mean</p>
-      <p class="stat-value">{one(average(mean))}{unit}</p>
-      <p class="stat-detail">Across {n} days</p>
-    </div>
-
-    <div class="card">
-      <p class="stat-label">Total rainfall</p>
-      <p class="stat-value">{Math.round(total(precipitation))} {rainUnit}</p>
-      <p class="stat-detail">{wetDays} days with 1 {rainUnit} or more</p>
+      <p class="stat-label">Coolest night, {currentLabel}</p>
+      <p class="stat-value">{one(latestFile.tasmin[coolestIndex])}°C</p>
+      <p class="stat-detail">{dayLabel(latestFile.time[coolestIndex])}</p>
     </div>
   </section>
 
   <section class="card">
-    <h2>Daily temperature</h2>
+    <h2>Daily temperature by season</h2>
     <p class="card-sub">
-      Line is the daily mean; the band spans each day's low to high. Hover for a single day.
+      Line is the daily mean, one per year. The shaded band is the most recent year's daily low
+      to high. Hover for a single day.
     </p>
-    <TemperatureChart daily={daily} units={units} />
-  </section>
 
-  <section class="card">
-    <h2>Monthly rainfall</h2>
-    <p class="card-sub">
-      Total precipitation per complete calendar month. Partial months at the edges of the window
-      are excluded.
-    </p>
-    <PrecipitationChart months={months} unit={rainUnit} />
-  </section>
+    <div class="season-picker" role="group" aria-label="Choose a season">
+      {
+        seasons.map((season) => (
+          <button
+            type="button"
+            data-season-button={season.code}
+            aria-pressed={season.code === current.code ? 'true' : 'false'}
+          >
+            {season.name}
+          </button>
+        ))
+      }
+    </div>
 
-  <section class="card table-view">
-    <details>
-      <summary>View the data as a table</summary>
-      <div class="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th scope="col">Month</th>
-              <th scope="col">Mean ({unit})</th>
-              <th scope="col">High ({unit})</th>
-              <th scope="col">Low ({unit})</th>
-              <th scope="col">Rainfall ({rainUnit})</th>
-            </tr>
-          </thead>
-          <tbody>
-            {
-              months.map((month) => (
-                <tr>
-                  <th scope="row">
-                    {month.label} {month.year}
-                  </th>
-                  <td>{one(month.meanTemp)}</td>
-                  <td>{one(month.maxTemp)}</td>
-                  <td>{one(month.minTemp)}</td>
-                  <td>{Math.round(month.precipitation)}</td>
-                </tr>
-              ))
-            }
-          </tbody>
-        </table>
-      </div>
-    </details>
+    {
+      seasons.map((season) => (
+        <div class="season-panel" data-season-panel={season.code} hidden={season.code !== current.code}>
+          <SeasonChart season={season.code} name={season.name} years={season.years} />
+
+          <details class="table-view">
+            <summary>
+              View {season.name} as a table
+            </summary>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th scope="col">Date</th>
+                    {season.years.map((year) => (
+                      <th scope="col" colspan="3">
+                        {year.season_year}
+                      </th>
+                    ))}
+                  </tr>
+                  <tr>
+                    <th scope="col" />
+                    {season.years.map(() => (
+                      <>
+                        <th scope="col">Min</th>
+                        <th scope="col">Mean</th>
+                        <th scope="col">Max</th>
+                      </>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: Math.max(...season.years.map((y) => y.days)) }).map(
+                    (_, i) => {
+                      const spine = season.years.find((year) => year.time[i]);
+                      return (
+                        <tr>
+                          <th scope="row">{dayLabel(spine.time[i]).replace(/ \d{4}$/, '')}</th>
+                          {season.years.map((year) => (
+                            <>
+                              <td>{year.tasmin[i] != null ? one(year.tasmin[i]) : '—'}</td>
+                              <td>{year.tasmean[i] != null ? one(year.tasmean[i]) : '—'}</td>
+                              <td>{year.tasmax[i] != null ? one(year.tasmax[i]) : '—'}</td>
+                            </>
+                          ))}
+                        </tr>
+                      );
+                    }
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </div>
+      ))
+    }
   </section>
 
   <footer class="page-footer">
     <p>
-      Built {generated} UTC · source: {source} · timezone {location.timezone}
+      Source: {manifest.source}. Daily statistics aggregated from hourly 2m temperature in UTC,
+      so daily extremes sit fractionally inside the true local ones. Values in °C.
     </p>
   </footer>
 </Base>
+
+<script>
+  const buttons = [...document.querySelectorAll('[data-season-button]')];
+  const panels = [...document.querySelectorAll('[data-season-panel]')];
+
+  buttons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const target = button.dataset.seasonButton;
+      buttons.forEach((other) =>
+        other.setAttribute('aria-pressed', String(other === button))
+      );
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.seasonPanel !== target;
+      });
+    });
+  });
+</script>
+
+<style>
+  .season-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .season-picker button {
+    padding: 0.35rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.85rem;
+    cursor: pointer;
+  }
+
+  .season-picker button:hover {
+    border-color: var(--axis);
+    color: var(--text-primary);
+  }
+
+  .season-picker button[aria-pressed='true'] {
+    border-color: var(--text-primary);
+    background: var(--text-primary);
+    color: var(--surface-1);
+  }
+
+  .table-view {
+    margin-top: 1.5rem;
+  }
+
+  .table-view .table-scroll {
+    max-height: 420px;
+    overflow-y: auto;
+  }
+
+  .table-view thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface-1);
+  }
+</style>

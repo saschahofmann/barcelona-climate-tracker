@@ -16,3 +16,11 @@ pnpm-debug.log*
 
 # macOS
 .DS_Store
+
+# python
+__pycache__/
+*.py[cod]
+
+# pixi environments
+.pixi/*
+!.pixi/config.toml

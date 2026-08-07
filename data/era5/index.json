@@ -1,0 +1,72 @@
+{
+  "location": {
+    "name": "Barcelona",
+    "latitude": 41.388,
+    "longitude": 2.158
+  },
+  "source": "ERA5 reanalysis (ECMWF ARCO)",
+  "variables": [
+    "tasmin",
+    "tasmean",
+    "tasmax"
+  ],
+  "units": "degC",
+  "seasons": [
+    {
+      "file": "2025-DJF.json",
+      "season_year": 2025,
+      "season": "DJF",
+      "start_date": "2025-01-01",
+      "days": 59,
+      "complete": false
+    },
+    {
+      "file": "2025-MAM.json",
+      "season_year": 2025,
+      "season": "MAM",
+      "start_date": "2025-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2025-JJA.json",
+      "season_year": 2025,
+      "season": "JJA",
+      "start_date": "2025-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2025-SON.json",
+      "season_year": 2025,
+      "season": "SON",
+      "start_date": "2025-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2026-DJF.json",
+      "season_year": 2026,
+      "season": "DJF",
+      "start_date": "2025-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2026-MAM.json",
+      "season_year": 2026,
+      "season": "MAM",
+      "start_date": "2026-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2026-JJA.json",
+      "season_year": 2026,
+      "season": "JJA",
+      "start_date": "2026-06-01",
+      "days": 63,
+      "complete": false
+    }
+  ]
+}

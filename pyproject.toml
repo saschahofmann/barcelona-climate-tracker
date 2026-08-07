@@ -1,0 +1,30 @@
+[project]
+authors = [{ name = "saschahofmann", email = "sascha.kelevra@gmail.com" }]
+dependencies = []
+name = "barcelona-climate-tracker"
+requires-python = ">= 3.14"
+version = "0.1.0"
+
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["osx-arm64"]
+
+[tool.pixi.pypi-dependencies]
+barcelona_climate_tracker = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+fetch-era5 = "python -m barcelona_climate_tracker.era5_daily"
+
+[tool.pixi.dependencies]
+xarray = ">=2026.7.0,<2027"
+python-dotenv = ">=1.2.2,<2"
+xclim = ">=0.61.1,<0.62"
+ruff = ">=0.16.1,<0.17"
+zarr = ">=3.3.0,<4"
+fsspec = ">=2026.7.0,<2027"
+aiohttp = ">=3.14.3,<4"
+dask = ">=2026.7.1,<2027"
