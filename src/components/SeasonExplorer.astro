@@ -1,0 +1,785 @@
+---
+import {
+  buildModel,
+  renderSvg,
+  MAX_YEARS,
+  VARIABLES,
+  SEASON_NAMES,
+  W,
+  H,
+} from '../lib/season-chart.js';
+
+const { dataset, defaultSeason, defaultYears, defaultVariable } = Astro.props;
+
+const seasonCodes = Object.keys(SEASON_NAMES).filter((code) => dataset[code]);
+
+// Render the default view at build time so the chart is present before the
+// controls hydrate; the client re-renders through the same functions.
+const initialEntries = defaultYears.map((year, index) => ({
+  year,
+  slot: index + 1,
+  data: dataset[defaultSeason].years[year],
+}));
+
+const initialModel = buildModel({
+  entries: initialEntries,
+  focus: defaultYears[0],
+  variable: defaultVariable,
+});
+const initialSvg = renderSvg(initialModel);
+
+const yearsFor = (code) =>
+  Object.keys(dataset[code].years)
+    .map(Number)
+    .sort((a, b) => b - a);
+const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - a);
+---
+
+<section class="card explorer" data-explorer>
+  <h2>Daily temperature by season</h2>
+  <p class="card-sub">
+    Compare up to {MAX_YEARS} years day for day. Clicking a year brings it to the front and shows
+    its daily low–high band; the × on a selected year removes it.
+  </p>
+
+  <div class="controls">
+    <div class="control">
+      <span class="control-label" id="season-label">Season</span>
+      <div class="chips" role="group" aria-labelledby="season-label">
+        {
+          seasonCodes.map((code) => (
+            <button
+              type="button"
+              data-season={code}
+              aria-pressed={code === defaultSeason ? 'true' : 'false'}
+            >
+              {SEASON_NAMES[code]}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="control">
+      <span class="control-label" id="variable-label">Series</span>
+      <div class="chips" role="group" aria-labelledby="variable-label">
+        {
+          VARIABLES.map((variable) => (
+            <button
+              type="button"
+              data-variable={variable.key}
+              aria-pressed={variable.key === defaultVariable ? 'true' : 'false'}
+            >
+              {variable.label}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="control years">
+    <div class="years-head">
+      <span class="control-label" id="years-label">
+        Years <em data-year-count>{defaultYears.length} of {MAX_YEARS}</em>
+      </span>
+      <button type="button" class="clear" data-clear>Clear all</button>
+    </div>
+    <div class="chips chips-years" role="group" aria-labelledby="years-label">
+      {
+        allYears.map((year) => (
+          <span class="chip" data-chip={year}>
+            <button type="button" data-year={year} aria-pressed="false">
+              {year}
+            </button>
+            <button type="button" data-remove={year} aria-label={`Remove ${year}`} hidden>
+              <svg viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+                <path d="M3.5 3.5l5 5M8.5 3.5l-5 5" />
+              </svg>
+            </button>
+          </span>
+        ))
+      }
+    </div>
+  </div>
+
+  <figure class="chart">
+    <div class="legend" data-legend></div>
+    <svg
+      viewBox={`0 0 ${W} ${H}`}
+      role="img"
+      data-chart
+      aria-label="Daily temperature for the selected season and years"
+      set:html={initialSvg}
+    />
+    <div class="tooltip" hidden></div>
+  </figure>
+
+  <details class="table-view">
+    <summary>View the plotted series as a table</summary>
+    <div class="table-scroll" data-table></div>
+  </details>
+
+  <script type="application/json" data-dataset set:html={JSON.stringify(dataset)} />
+  <script
+    type="application/json"
+    data-initial
+    set:html={JSON.stringify({
+      season: defaultSeason,
+      variable: defaultVariable,
+      years: defaultYears,
+    })}
+  />
+</section>
+
+<style>
+  .explorer {
+    padding-bottom: 1.4rem;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .control-label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+  }
+
+  .control-label em {
+    color: var(--text-muted);
+    font-style: normal;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .chips button {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+
+  .chips button:hover:not(:disabled) {
+    border-color: var(--axis);
+    color: var(--text-primary);
+  }
+
+  /* Season and series pills only — year chips carry their own selected state
+     below, and these would otherwise out-specify it. */
+  .chips:not(.chips-years) button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+
+  .chips:not(.chips-years) button[aria-pressed='true'] {
+    border-color: var(--text-primary);
+    background: var(--text-primary);
+    color: var(--surface-1);
+  }
+
+  .years {
+    margin-bottom: 1.4rem;
+  }
+
+  .years-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .years-head .control-label {
+    margin-bottom: 0;
+  }
+
+  .clear {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 0.78rem;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+
+  .clear:hover {
+    color: var(--text-primary);
+  }
+
+  /* The pill is the wrapper so the year and its remove button share one border
+     — nesting a button inside a button would be invalid. */
+  .chip {
+    display: inline-flex;
+    align-items: stretch;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .chip button {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+
+  .chip button[data-year] {
+    padding: 0.3rem 0.75rem;
+  }
+
+  .chip:hover:not([data-disabled]) {
+    border-color: var(--axis);
+  }
+
+  .chip button:hover:not(:disabled) {
+    color: var(--text-primary);
+  }
+
+  .chip[data-disabled] {
+    opacity: 0.35;
+  }
+
+  .chip[data-disabled] button {
+    cursor: not-allowed;
+  }
+
+  /* A selected year wears its series colour; the front year is filled. */
+  .chip[data-selected] {
+    border-color: var(--series);
+  }
+
+  .chip[data-selected] button[data-year] {
+    color: var(--text-primary);
+    padding-right: 0.4rem;
+  }
+
+  .chip[data-focus] {
+    background: var(--series);
+  }
+
+  /* Ink on a filled chip, not a text token: the fill is a series colour in both
+     modes, and black clears 4.5:1 on all five (blue is tightest at 4.71).
+     Specificity has to beat both [data-selected] and [data-remove] above. */
+  .chip[data-focus] button[data-year],
+  .chip[data-focus] button[data-remove] {
+    color: #0b0b0b;
+  }
+
+  .chip button[data-remove] {
+    display: flex;
+    align-items: center;
+    padding: 0 0.55rem 0 0.15rem;
+    color: var(--text-muted);
+  }
+
+  /* `display: flex` above would otherwise beat the [hidden] attribute. */
+  .chip button[data-remove][hidden] {
+    display: none;
+  }
+
+  .chip button[data-remove] svg {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    fill: none;
+  }
+
+  .chip button[data-remove]:hover {
+    color: var(--text-primary);
+  }
+
+  .chip[data-focus] button[data-remove]:hover {
+    opacity: 0.75;
+  }
+
+  .chart {
+    position: relative;
+    margin: 0;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 1.1rem;
+    min-height: 1.2rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+  }
+
+  .legend :global(.legend-item) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .legend :global(.legend-item em) {
+    color: var(--text-muted);
+    font-style: normal;
+  }
+
+  .legend :global(.key) {
+    width: 16px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--series);
+    flex: none;
+  }
+
+  .legend :global(.key-band) {
+    height: 10px;
+    border-radius: 2px;
+    opacity: 0.22;
+  }
+
+  /* Scoped: the remove buttons hold their own inline <svg> icons. */
+  svg[data-chart] {
+    display: block;
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    touch-action: pan-y;
+  }
+
+  svg[data-chart] :global(.grid line) {
+    stroke: var(--grid);
+    stroke-width: 1;
+  }
+
+  svg[data-chart] :global(.baseline) {
+    stroke: var(--axis);
+    stroke-width: 1;
+  }
+
+  svg[data-chart] :global(.band) {
+    fill: var(--series);
+    fill-opacity: 0.13;
+  }
+
+  svg[data-chart] :global(.line) {
+    fill: none;
+    stroke: var(--series);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    opacity: 0.75;
+  }
+
+  svg[data-chart] :global(.line.is-focus) {
+    stroke-width: 2.4;
+    opacity: 1;
+  }
+
+  svg[data-chart] :global(.end-dot) {
+    fill: var(--series);
+    stroke: var(--surface-1);
+    stroke-width: 2;
+  }
+
+  svg[data-chart] :global(.end-label) {
+    fill: var(--text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+
+  svg[data-chart] :global(.tick text) {
+    fill: var(--text-muted);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  svg[data-chart] :global(.empty) {
+    fill: var(--text-muted);
+    font-size: 14px;
+  }
+
+  svg[data-chart] :global(.crosshair) {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .chart.is-active svg[data-chart] :global(.crosshair) {
+    opacity: 1;
+  }
+
+  svg[data-chart] :global(.crosshair line) {
+    stroke: var(--axis);
+    stroke-width: 1;
+  }
+
+  svg[data-chart] :global(.crosshair circle) {
+    fill: var(--series);
+    stroke: var(--surface-1);
+    stroke-width: 2;
+  }
+
+  .tooltip {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    pointer-events: none;
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface-1);
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px rgb(0 0 0 / 0.08);
+  }
+
+  .tooltip :global(strong) {
+    color: var(--text-primary);
+  }
+
+  .tooltip :global(.row) {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .tooltip :global(.row-focus) {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .tooltip :global(.swatch) {
+    width: 10px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--series);
+    flex: none;
+  }
+
+  /* `display: grid` above would otherwise beat the [hidden] attribute. */
+  .tooltip[hidden] {
+    display: none;
+  }
+
+  .table-view {
+    margin-top: 1.5rem;
+  }
+
+  .table-view summary {
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+  }
+
+  .table-view .table-scroll {
+    max-height: 420px;
+    overflow: auto;
+    margin-top: 1rem;
+  }
+
+  .table-view :global(thead th) {
+    position: sticky;
+    top: 0;
+    background: var(--surface-1);
+  }
+</style>
+
+<script>
+  import {
+    buildModel,
+    renderSvg,
+    makeScale,
+    xAt,
+    addDays,
+    dayOf,
+    MAX_YEARS,
+    VARIABLES,
+    SEASON_NAMES,
+    SERIES_SLOTS,
+    W,
+    PAD,
+    PLOT_W,
+  } from '../lib/season-chart.js';
+
+  const root = document.querySelector('[data-explorer]');
+
+  if (root) {
+    const dataset = JSON.parse(root.querySelector('[data-dataset]').textContent);
+    const initial = JSON.parse(root.querySelector('[data-initial]').textContent);
+
+    const svg = root.querySelector('[data-chart]');
+    const figure = root.querySelector('.chart');
+    const legend = root.querySelector('[data-legend]');
+    const tooltip = root.querySelector('.tooltip');
+    const tableHost = root.querySelector('[data-table]');
+    const yearCount = root.querySelector('[data-year-count]');
+
+    const seasonButtons = [...root.querySelectorAll('[data-season]')];
+    const variableButtons = [...root.querySelectorAll('[data-variable]')];
+    const yearButtons = [...root.querySelectorAll('[data-year]')];
+    const removeButtons = [...root.querySelectorAll('[data-remove]')];
+    const clearButton = root.querySelector('[data-clear]');
+    const chips = new Map(
+      [...root.querySelectorAll('[data-chip]')].map((chip) => [Number(chip.dataset.chip), chip])
+    );
+
+    const state = {
+      season: initial.season,
+      variable: initial.variable,
+      // Ordered oldest-selected first; each entry keeps its colour slot.
+      selected: initial.years.map((year, index) => ({ year, slot: index + 1 })),
+      focus: initial.years[0],
+    };
+
+    let model = null;
+
+    const dataFor = (year) => dataset[state.season].years[year];
+    const isAvailable = (year) => Boolean(dataFor(year));
+
+    function freeSlot() {
+      const taken = new Set(state.selected.map((entry) => entry.slot));
+      return SERIES_SLOTS.find((slot) => !taken.has(slot)) ?? SERIES_SLOTS[0];
+    }
+
+    function entries() {
+      return state.selected
+        .filter((entry) => isAvailable(entry.year))
+        .map((entry) => ({ ...entry, data: dataFor(entry.year) }));
+    }
+
+    const newestSelected = () =>
+      state.selected.length ? Math.max(...state.selected.map((entry) => entry.year)) : null;
+
+    /** Selecting is always additive; removal is the × button's job alone. */
+    function selectYear(year) {
+      if (!isAvailable(year)) return;
+      if (!state.selected.some((entry) => entry.year === year)) {
+        if (state.selected.length >= MAX_YEARS) return;
+        state.selected.push({ year, slot: freeSlot() });
+      }
+      state.focus = year;
+      render();
+    }
+
+    function removeYear(year) {
+      state.selected = state.selected.filter((entry) => entry.year !== year);
+      if (state.focus === year) state.focus = newestSelected();
+      render();
+    }
+
+    function clearYears() {
+      state.selected = [];
+      state.focus = null;
+      render();
+    }
+
+    function setSeason(season) {
+      state.season = season;
+      // Years absent from the new season drop out, freeing their slots.
+      state.selected = state.selected.filter((entry) => isAvailable(entry.year));
+      if (!state.selected.some((entry) => entry.year === state.focus)) {
+        state.focus = newestSelected();
+      }
+      render();
+    }
+
+    function renderLegend(current) {
+      if (!current) {
+        legend.innerHTML = '';
+        return;
+      }
+      const items = current.series.map((series) => {
+        const data = dataFor(series.year);
+        const partial = data.days < current.maxDays;
+        return (
+          `<span class="legend-item" style="--series:var(--series-${series.slot})">` +
+          `<span class="key"></span>${series.year}` +
+          (partial ? `<em>to ${dayOf(addDays(data.start, data.days - 1))}</em>` : '') +
+          '</span>'
+        );
+      });
+      const focus = current.series.find((series) => series.isFocus);
+      items.push(
+        `<span class="legend-item" style="--series:var(--series-${focus.slot})">` +
+          `<span class="key key-band"></span>${focus.year} daily low–high</span>`
+      );
+      legend.innerHTML = items.join('');
+    }
+
+    function renderTable(current) {
+      if (!current) {
+        tableHost.innerHTML = '';
+        return;
+      }
+      const label = VARIABLES.find((variable) => variable.key === state.variable).label;
+      const head =
+        '<tr><th scope="col">Date</th>' +
+        current.series.map((series) => `<th scope="col">${series.year}</th>`).join('') +
+        '</tr>';
+
+      const rows = [];
+      for (let i = 0; i < current.maxDays; i++) {
+        const iso = addDays(current.focusStart, i);
+        const cells = current.series
+          .map((series) => {
+            const value = dataFor(series.year)[state.variable][i];
+            return `<td>${value == null ? '—' : value.toFixed(1)}</td>`;
+          })
+          .join('');
+        rows.push(`<tr><th scope="row">${dayOf(iso)}</th>${cells}</tr>`);
+      }
+
+      tableHost.innerHTML =
+        `<table><caption class="sr-only">Daily ${label.toLowerCase()} temperature in °C</caption>` +
+        `<thead>${head}</thead><tbody>${rows.join('')}</tbody></table>`;
+    }
+
+    function renderControls() {
+      seasonButtons.forEach((button) =>
+        button.setAttribute('aria-pressed', String(button.dataset.season === state.season))
+      );
+      variableButtons.forEach((button) =>
+        button.setAttribute('aria-pressed', String(button.dataset.variable === state.variable))
+      );
+
+      const atLimit = state.selected.length >= MAX_YEARS;
+      yearButtons.forEach((button) => {
+        const year = Number(button.dataset.year);
+        const chip = chips.get(year);
+        const entry = state.selected.find((item) => item.year === year);
+        const available = isAvailable(year);
+
+        button.disabled = !available || (!entry && atLimit);
+        button.setAttribute('aria-pressed', String(Boolean(entry)));
+        chip.querySelector('[data-remove]').hidden = !entry;
+        chip.toggleAttribute('data-disabled', button.disabled);
+
+        if (entry) {
+          chip.dataset.selected = '';
+          chip.style.setProperty('--series', `var(--series-${entry.slot})`);
+          if (state.focus === year) chip.dataset.focus = '';
+          else delete chip.dataset.focus;
+        } else {
+          delete chip.dataset.selected;
+          delete chip.dataset.focus;
+          chip.style.removeProperty('--series');
+        }
+      });
+
+      yearCount.textContent = `${state.selected.length} of ${MAX_YEARS}`;
+      clearButton.hidden = state.selected.length === 0;
+    }
+
+    function render() {
+      model = buildModel({ entries: entries(), focus: state.focus, variable: state.variable });
+      svg.innerHTML = renderSvg(model);
+      svg.setAttribute(
+        'aria-label',
+        model
+          ? `Daily ${state.variable} temperature in Barcelona for ${SEASON_NAMES[state.season]}, ` +
+              `comparing ${model.series.map((series) => series.year).join(', ')}.`
+          : 'No years selected'
+      );
+      renderLegend(model);
+      renderControls();
+      renderTable(model);
+      hide();
+    }
+
+    function move(event) {
+      if (!model) return;
+      const rect = svg.getBoundingClientRect();
+      if (!rect.width) return;
+
+      const ratio = (((event.clientX - rect.left) / rect.width) * W - PAD.left) / PLOT_W;
+      const i = Math.max(0, Math.min(model.maxDays - 1, Math.round(ratio * (model.maxDays - 1))));
+
+      const y = makeScale(model.domain);
+      const x = xAt(i, model.maxDays);
+      const crossLine = svg.querySelector('.crosshair line');
+      const dots = [...svg.querySelectorAll('.crosshair circle')];
+
+      crossLine.setAttribute('x1', x);
+      crossLine.setAttribute('x2', x);
+
+      const rows = model.series.map((series, index) => {
+        const data = dataFor(series.year);
+        const value = data[state.variable][i];
+        const dot = dots[index];
+
+        if (value == null) {
+          dot.setAttribute('opacity', '0');
+          return '';
+        }
+        dot.setAttribute('opacity', '1');
+        dot.setAttribute('cx', x);
+        dot.setAttribute('cy', y(value));
+
+        const extra = series.isFocus ? ` (${data.min[i].toFixed(1)}–${data.max[i].toFixed(1)})` : '';
+        return (
+          `<span class="row${series.isFocus ? ' row-focus' : ''}" ` +
+          `style="--series:var(--series-${series.slot})">` +
+          `<span class="swatch"></span>${series.year} · ${value.toFixed(1)}°${extra}</span>`
+        );
+      });
+
+      figure.classList.add('is-active');
+      tooltip.hidden = false;
+      tooltip.innerHTML = `<strong>${dayOf(addDays(model.focusStart, i))}</strong>${rows.join('')}`;
+
+      const half = tooltip.offsetWidth / 2;
+      const px = (x / W) * rect.width;
+      tooltip.style.left = `${Math.max(half, Math.min(rect.width - half, px))}px`;
+    }
+
+    function hide() {
+      figure.classList.remove('is-active');
+      tooltip.hidden = true;
+    }
+
+    seasonButtons.forEach((button) =>
+      button.addEventListener('click', () => setSeason(button.dataset.season))
+    );
+    variableButtons.forEach((button) =>
+      button.addEventListener('click', () => {
+        state.variable = button.dataset.variable;
+        render();
+      })
+    );
+    yearButtons.forEach((button) =>
+      button.addEventListener('click', () => selectYear(Number(button.dataset.year)))
+    );
+    removeButtons.forEach((button) =>
+      button.addEventListener('click', () => removeYear(Number(button.dataset.remove)))
+    );
+    clearButton.addEventListener('click', clearYears);
+
+    svg.addEventListener('pointermove', move);
+    svg.addEventListener('pointerdown', move);
+    svg.addEventListener('pointerleave', hide);
+
+    render();
+  }
+</script>

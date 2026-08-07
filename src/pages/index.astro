@@ -1,85 +1,94 @@
 ---
 import Base from '../layouts/Base.astro';
-import SeasonChart from '../components/SeasonChart.astro';
+import SeasonExplorer from '../components/SeasonExplorer.astro';
 import { dayLabel } from '../lib/chart.js';
+import { SEASON_NAMES, MAX_YEARS } from '../lib/season-chart.js';
 
 // Resolved at build time — the deployed page is static, no runtime fetch.
 const modules = import.meta.glob('../../data/era5/*.json', { eager: true });
-
-const SEASON_NAMES = {
-  DJF: 'Winter',
-  MAM: 'Spring',
-  JJA: 'Summer',
-  SON: 'Autumn',
-};
-const SEASON_ORDER = Object.keys(SEASON_NAMES);
-
 const manifest = modules['../../data/era5/index.json'].default;
 
-const seasonFiles = Object.entries(modules)
+const files = Object.entries(modules)
   .filter(([path]) => !path.endsWith('index.json'))
   .map(([, module]) => module.default);
 
-// One panel per season, years ascending so the newest is the focus.
-const seasons = SEASON_ORDER.map((code) => ({
-  code,
-  name: SEASON_NAMES[code],
-  years: seasonFiles
-    .filter((file) => file.season === code)
-    .sort((a, b) => a.season_year - b.season_year),
-})).filter((season) => season.years.length > 0);
+// The `time` array is dropped from the inlined payload: every date is
+// recoverable from `start` plus the index, which roughly halves the page.
+const dataset = {};
+for (const file of files) {
+  const season = (dataset[file.season] ??= { name: SEASON_NAMES[file.season], years: {} });
+  season.years[file.season_year] = {
+    start: file.time[0],
+    days: file.days,
+    complete: file.complete,
+    mean: file.tasmean,
+    min: file.tasmin,
+    max: file.tasmax,
+  };
+}
+
+// The season holding the newest observation leads the page.
+const latest = files.reduce((a, b) => (b.time[b.days - 1] > a.time[a.days - 1] ? b : a));
+const defaultSeason = latest.season;
+const defaultYears = Object.keys(dataset[defaultSeason].years)
+  .map(Number)
+  .sort((a, b) => b - a)
+  .slice(0, 3);
 
 const average = (values) => values.reduce((acc, v) => acc + v, 0) / values.length;
 const one = (v) => v.toFixed(1);
 const signed = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}`;
 
-// The season holding the most recent observation leads the page.
-const latestFile = seasonFiles.reduce((a, b) =>
-  b.time[b.days - 1] > a.time[a.days - 1] ? b : a
+const lastIndex = latest.days - 1;
+const latestMean = latest.tasmean[lastIndex];
+
+// Every prior year of this season, clipped to the same window, is the baseline.
+const priorSeasons = files.filter(
+  (file) => file.season === latest.season && file.season_year !== latest.season_year
 );
-const current = seasons.find((season) => season.code === latestFile.season);
-const previous = current.years.length > 1 ? current.years[current.years.length - 2] : null;
+const baseline = average(
+  priorSeasons.map((file) => average(file.tasmean.slice(0, latest.days)))
+);
+const toDate = average(latest.tasmean);
 
-const lastIndex = latestFile.days - 1;
-const latestDate = latestFile.time[lastIndex];
-const latestMean = latestFile.tasmean[lastIndex];
+const sameDay = priorSeasons
+  .map((file) => file.tasmean[lastIndex])
+  .filter((value) => value != null);
+const sameDayBaseline = sameDay.length ? average(sameDay) : null;
 
-// Same index means the same calendar day, so this compares like with like.
-const sameDayLastYear = previous ? previous.tasmean[lastIndex] : null;
+const warmest = latest.tasmax.indexOf(Math.max(...latest.tasmax));
+const coolest = latest.tasmin.indexOf(Math.min(...latest.tasmin));
 
-// Season-to-date, clipped to the same window in both years.
-const toDate = average(latestFile.tasmean);
-const priorToDate = previous ? average(previous.tasmean.slice(0, latestFile.days)) : null;
-
-const warmestIndex = latestFile.tasmax.indexOf(Math.max(...latestFile.tasmax));
-const coolestIndex = latestFile.tasmin.indexOf(Math.min(...latestFile.tasmin));
-
-const currentLabel = `${current.name} ${latestFile.season_year}`;
+const seasonName = SEASON_NAMES[latest.season];
+const currentLabel = `${seasonName} ${latest.season_year}`;
+const firstYear = Math.min(...files.map((file) => file.season_year));
+const lastYear = Math.max(...files.map((file) => file.season_year));
+const baselineSpan = `${firstYear}–${lastYear - 1}`;
 ---
 
 <Base
   title="Barcelona Climate Tracker"
-  description="Daily ERA5 temperature for Barcelona, compared season by season across years."
+  description="Daily ERA5 temperature for Barcelona, compared season by season across 2000–2026."
 >
   <header class="page-header">
     <h1>Barcelona Climate Tracker</h1>
     <p>
       Daily minimum, mean and maximum 2m temperature for {manifest.location.name}
-      ({manifest.location.latitude}°N, {manifest.location.longitude}°E), from the
-      {manifest.source}. Each season is charted on its own so years can be laid over one
-      another day for day.
+      ({manifest.location.latitude}°N, {manifest.location.longitude}°E), {firstYear} to {lastYear},
+      from the {manifest.source}. Each season is charted on its own so any {MAX_YEARS} years can be
+      laid over one another day for day.
     </p>
   </header>
 
   <section class="summary">
     <div class="card hero">
-      <p class="stat-label">Mean temperature, {dayLabel(latestDate)}</p>
+      <p class="stat-label">Mean temperature, {dayLabel(latest.time[lastIndex])}</p>
       <p class="stat-value">{one(latestMean)}°C</p>
       <p class="stat-detail">
         {
-          sameDayLastYear != null
-            ? `${signed(latestMean - sameDayLastYear)}°C against the same day in ${previous.season_year}`
-            : 'No prior year on record for this day'
+          sameDayBaseline != null
+            ? `${signed(latestMean - sameDayBaseline)}°C against the ${baselineSpan} average for this day`
+            : 'No prior years on record for this day'
         }
       </p>
     </div>
@@ -88,173 +97,35 @@ const currentLabel = `${current.name} ${latestFile.season_year}`;
       <p class="stat-label">{currentLabel} so far</p>
       <p class="stat-value">{one(toDate)}°C</p>
       <p class="stat-detail">
-        {
-          priorToDate != null
-            ? `${signed(toDate - priorToDate)}°C against ${previous.season_year} over the same ${latestFile.days} days`
-            : `Mean across ${latestFile.days} days`
-        }
+        {signed(toDate - baseline)}°C against {baselineSpan} over the same {latest.days} days
       </p>
     </div>
 
     <div class="card">
       <p class="stat-label">Warmest day, {currentLabel}</p>
-      <p class="stat-value">{one(latestFile.tasmax[warmestIndex])}°C</p>
-      <p class="stat-detail">{dayLabel(latestFile.time[warmestIndex])}</p>
+      <p class="stat-value">{one(latest.tasmax[warmest])}°C</p>
+      <p class="stat-detail">{dayLabel(latest.time[warmest])}</p>
     </div>
 
     <div class="card">
       <p class="stat-label">Coolest night, {currentLabel}</p>
-      <p class="stat-value">{one(latestFile.tasmin[coolestIndex])}°C</p>
-      <p class="stat-detail">{dayLabel(latestFile.time[coolestIndex])}</p>
+      <p class="stat-value">{one(latest.tasmin[coolest])}°C</p>
+      <p class="stat-detail">{dayLabel(latest.time[coolest])}</p>
     </div>
   </section>
 
-  <section class="card">
-    <h2>Daily temperature by season</h2>
-    <p class="card-sub">
-      Line is the daily mean, one per year. The shaded band is the most recent year's daily low
-      to high. Hover for a single day.
-    </p>
-
-    <div class="season-picker" role="group" aria-label="Choose a season">
-      {
-        seasons.map((season) => (
-          <button
-            type="button"
-            data-season-button={season.code}
-            aria-pressed={season.code === current.code ? 'true' : 'false'}
-          >
-            {season.name}
-          </button>
-        ))
-      }
-    </div>
-
-    {
-      seasons.map((season) => (
-        <div class="season-panel" data-season-panel={season.code} hidden={season.code !== current.code}>
-          <SeasonChart season={season.code} name={season.name} years={season.years} />
-
-          <details class="table-view">
-            <summary>
-              View {season.name} as a table
-            </summary>
-            <div class="table-scroll">
-              <table>
-                <thead>
-                  <tr>
-                    <th scope="col">Date</th>
-                    {season.years.map((year) => (
-                      <th scope="col" colspan="3">
-                        {year.season_year}
-                      </th>
-                    ))}
-                  </tr>
-                  <tr>
-                    <th scope="col" />
-                    {season.years.map(() => (
-                      <>
-                        <th scope="col">Min</th>
-                        <th scope="col">Mean</th>
-                        <th scope="col">Max</th>
-                      </>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: Math.max(...season.years.map((y) => y.days)) }).map(
-                    (_, i) => {
-                      const spine = season.years.find((year) => year.time[i]);
-                      return (
-                        <tr>
-                          <th scope="row">{dayLabel(spine.time[i]).replace(/ \d{4}$/, '')}</th>
-                          {season.years.map((year) => (
-                            <>
-                              <td>{year.tasmin[i] != null ? one(year.tasmin[i]) : '—'}</td>
-                              <td>{year.tasmean[i] != null ? one(year.tasmean[i]) : '—'}</td>
-                              <td>{year.tasmax[i] != null ? one(year.tasmax[i]) : '—'}</td>
-                            </>
-                          ))}
-                        </tr>
-                      );
-                    }
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </div>
-      ))
-    }
-  </section>
+  <SeasonExplorer
+    dataset={dataset}
+    defaultSeason={defaultSeason}
+    defaultYears={defaultYears}
+    defaultVariable="mean"
+  />
 
   <footer class="page-footer">
     <p>
       Source: {manifest.source}. Daily statistics aggregated from hourly 2m temperature in UTC,
-      so daily extremes sit fractionally inside the true local ones. Values in °C.
+      so daily extremes sit fractionally inside the true local ones. Values in °C. Winter is
+      labelled by its January — DJF {lastYear} is December {lastYear - 1} through February {lastYear}.
     </p>
   </footer>
 </Base>
-
-<script>
-  const buttons = [...document.querySelectorAll('[data-season-button]')];
-  const panels = [...document.querySelectorAll('[data-season-panel]')];
-
-  buttons.forEach((button) => {
-    button.addEventListener('click', () => {
-      const target = button.dataset.seasonButton;
-      buttons.forEach((other) =>
-        other.setAttribute('aria-pressed', String(other === button))
-      );
-      panels.forEach((panel) => {
-        panel.hidden = panel.dataset.seasonPanel !== target;
-      });
-    });
-  });
-</script>
-
-<style>
-  .season-picker {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-bottom: 1.25rem;
-  }
-
-  .season-picker button {
-    padding: 0.35rem 0.85rem;
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--text-secondary);
-    font: inherit;
-    font-size: 0.85rem;
-    cursor: pointer;
-  }
-
-  .season-picker button:hover {
-    border-color: var(--axis);
-    color: var(--text-primary);
-  }
-
-  .season-picker button[aria-pressed='true'] {
-    border-color: var(--text-primary);
-    background: var(--text-primary);
-    color: var(--surface-1);
-  }
-
-  .table-view {
-    margin-top: 1.5rem;
-  }
-
-  .table-view .table-scroll {
-    max-height: 420px;
-    overflow-y: auto;
-  }
-
-  .table-view thead th {
-    position: sticky;
-    top: 0;
-    background: var(--surface-1);
-  }
-</style>

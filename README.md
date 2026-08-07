@@ -9,8 +9,9 @@ GitHub Pages by Actions.
 ## Data
 
 Daily minimum, mean and maximum 2m temperature from the **ERA5 reanalysis**, read
-directly from ECMWF's ARCO Zarr store. `src/barcelona_climate_tracker/era5_daily.py`
-fetches it and writes one JSON file per season to `data/era5/`:
+directly from ECMWF's ARCO Zarr store, covering **2000–2026** (107 seasons).
+`src/barcelona_climate_tracker/era5_daily.py` fetches it and writes one JSON file per
+season to `data/era5/`:
 
 ```
 data/era5/2026-JJA.json     season year + season code
@@ -97,6 +98,26 @@ Things that bite:
   anyway, so make the fetch re-request a trailing window rather than only "yesterday".
 - Scheduled workflows auto-disable after 60 days of repo inactivity. Daily data commits
   count as activity, so this is self-solving here.
-- Extending `START_YEAR` back a decade is the point where the chart needs the
-  climatology band (percentiles across a 1991–2020 baseline) instead of one line per
-  year — past ~4 overlaid lines nobody can track them.
+- ERA5 goes back to 1940. Pushing `START_YEAR` earlier costs only fetch time and repo
+  size, but the whole archive inlined into the page would stop being free — at some
+  point the data has to move to files fetched on demand instead.
+
+## The chart
+
+`src/lib/season-chart.js` holds the model builder and SVG renderer. Astro calls it at
+build time to emit the default view; the browser calls the same functions to re-render
+on interaction, so build and runtime output cannot drift.
+
+Controls: season (4), plotted series (mean / minimum / maximum), and up to **5 years**
+from 2000–2026. Clicking a year brings it to the front — it gets the daily low–high band
+and a heavier stroke. Selection is purely additive; removal is the × on a selected chip,
+or "Clear all". Each chip is a wrapper holding two buttons, since a button cannot nest
+inside another button.
+
+Each selected year holds a colour slot until it is deselected, so removing one year never
+repaints the others. The five slots are validated for colour-vision deficiency and
+contrast in both light and dark mode; three of them fall below 3:1 on the light surface,
+which is why the legend swatches and the table view are not optional.
+
+All 27 years of all four seasons are inlined into the HTML (~44 KB gzipped), so switching
+seasons or years costs no network round trip.
