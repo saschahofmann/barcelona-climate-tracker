@@ -27,7 +27,7 @@ for (const file of files) {
   };
 }
 
-// The season holding the newest observation leads the page.
+// The season holding the newest observation leads the chart.
 const latest = files.reduce((a, b) => (b.time[b.days - 1] > a.time[a.days - 1] ? b : a));
 const defaultSeason = latest.season;
 const defaultYears = Object.keys(dataset[defaultSeason].years)
@@ -35,35 +35,20 @@ const defaultYears = Object.keys(dataset[defaultSeason].years)
   .sort((a, b) => b - a)
   .slice(0, 3);
 
-const average = (values) => values.reduce((acc, v) => acc + v, 0) / values.length;
-const one = (v) => v.toFixed(1);
-const signed = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}`;
-
-const lastIndex = latest.days - 1;
-const latestMean = latest.tasmean[lastIndex];
-
-// Every prior year of this season, clipped to the same window, is the baseline.
-const priorSeasons = files.filter(
-  (file) => file.season === latest.season && file.season_year !== latest.season_year
-);
-const baseline = average(
-  priorSeasons.map((file) => average(file.tasmean.slice(0, latest.days)))
-);
-const toDate = average(latest.tasmean);
-
-const sameDay = priorSeasons
-  .map((file) => file.tasmean[lastIndex])
-  .filter((value) => value != null);
-const sameDayBaseline = sameDay.length ? average(sameDay) : null;
-
-const warmest = latest.tasmax.indexOf(Math.max(...latest.tasmax));
-const coolest = latest.tasmin.indexOf(Math.min(...latest.tasmin));
-
-const seasonName = SEASON_NAMES[latest.season];
-const currentLabel = `${seasonName} ${latest.season_year}`;
 const firstYear = Math.min(...files.map((file) => file.season_year));
 const lastYear = Math.max(...files.map((file) => file.season_year));
-const baselineSpan = `${firstYear}–${lastYear - 1}`;
+
+// Highest daily maximum anywhere in the record.
+const hottest = files.reduce(
+  (best, file) => {
+    const index = file.tasmax.indexOf(Math.max(...file.tasmax));
+    const value = file.tasmax[index];
+    return value > best.value
+      ? { value, date: file.time[index], season: SEASON_NAMES[file.season] }
+      : best;
+  },
+  { value: -Infinity, date: null, season: null }
+);
 ---
 
 <Base
@@ -80,38 +65,10 @@ const baselineSpan = `${firstYear}–${lastYear - 1}`;
     </p>
   </header>
 
-  <section class="summary">
-    <div class="card hero">
-      <p class="stat-label">Mean temperature, {dayLabel(latest.time[lastIndex])}</p>
-      <p class="stat-value">{one(latestMean)}°C</p>
-      <p class="stat-detail">
-        {
-          sameDayBaseline != null
-            ? `${signed(latestMean - sameDayBaseline)}°C against the ${baselineSpan} average for this day`
-            : 'No prior years on record for this day'
-        }
-      </p>
-    </div>
-
-    <div class="card">
-      <p class="stat-label">{currentLabel} so far</p>
-      <p class="stat-value">{one(toDate)}°C</p>
-      <p class="stat-detail">
-        {signed(toDate - baseline)}°C against {baselineSpan} over the same {latest.days} days
-      </p>
-    </div>
-
-    <div class="card">
-      <p class="stat-label">Warmest day, {currentLabel}</p>
-      <p class="stat-value">{one(latest.tasmax[warmest])}°C</p>
-      <p class="stat-detail">{dayLabel(latest.time[warmest])}</p>
-    </div>
-
-    <div class="card">
-      <p class="stat-label">Coolest night, {currentLabel}</p>
-      <p class="stat-value">{one(latest.tasmin[coolest])}°C</p>
-      <p class="stat-detail">{dayLabel(latest.time[coolest])}</p>
-    </div>
+  <section class="card hero">
+    <p class="stat-label">Hottest day on record, {firstYear}–{lastYear}</p>
+    <p class="stat-value">{hottest.value.toFixed(1)}°C</p>
+    <p class="stat-detail">{dayLabel(hottest.date)} · daily maximum</p>
   </section>
 
   <SeasonExplorer

@@ -132,18 +132,7 @@ body {
   font-size: 0.85rem;
 }
 
-/* Hero + stat tiles ------------------------------------------------------- */
-
-.summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-
-.hero {
-  grid-column: span 2;
-}
+/* Hero figure ------------------------------------------------------------- */
 
 .hero .stat-value {
   font-size: clamp(2.75rem, 8vw, 3.5rem);
@@ -167,12 +156,6 @@ body {
   margin: 0.2rem 0 0;
   color: var(--text-muted);
   font-size: 0.8rem;
-}
-
-@media (max-width: 520px) {
-  .hero {
-    grid-column: span 1;
-  }
 }
 
 /* Table view -------------------------------------------------------------- */
