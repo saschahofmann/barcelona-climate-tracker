@@ -1,0 +1,6 @@
+# pnpm blocks dependency build scripts unless listed here.
+# Both are transitive deps of Astro and need a postinstall to fetch their
+# platform-native binaries: esbuild transpiles, sharp optimizes images.
+allowBuilds:
+  esbuild: true
+  sharp: true

@@ -1,0 +1,154 @@
+---
+import Base from '../layouts/Base.astro';
+import TemperatureChart from '../components/TemperatureChart.astro';
+import PrecipitationChart from '../components/PrecipitationChart.astro';
+import { monthlyAggregates, dayLabel } from '../lib/chart.js';
+import data from '../../data/daily.json';
+
+// Imported at build time — the deployed site is fully static, no runtime fetch.
+const { daily, units, location, generated_at, source, source_note } = data;
+
+const mean = daily.temperature_2m_mean;
+const high = daily.temperature_2m_max;
+const low = daily.temperature_2m_min;
+const precipitation = daily.precipitation_sum;
+const n = daily.time.length;
+const last = n - 1;
+
+const months = monthlyAggregates(daily);
+
+const average = (values) => values.reduce((acc, v) => acc + v, 0) / values.length;
+const total = (values) => values.reduce((acc, v) => acc + v, 0);
+
+const latestValue = mean[last];
+const trailingMean = average(mean.slice(-30));
+const delta = latestValue - trailingMean;
+
+const hottest = high.indexOf(Math.max(...high));
+const coldest = low.indexOf(Math.min(...low));
+
+const unit = units.temperature_2m_mean;
+const rainUnit = units.precipitation_sum;
+const wetDays = precipitation.filter((v) => v >= 1).length;
+
+const one = (v) => v.toFixed(1);
+const signed = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}`;
+
+const generated = new Intl.DateTimeFormat('en-GB', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+  timeZone: 'UTC',
+}).format(new Date(generated_at));
+---
+
+<Base
+  title="Barcelona Climate Tracker"
+  description="Daily temperature and monthly precipitation for Barcelona, rebuilt every morning."
+>
+  <header class="page-header">
+    <h1>Barcelona Climate Tracker</h1>
+    <p>
+      Twelve months of daily temperature and monthly rainfall for {location.name}
+      ({location.latitude}°N, {location.longitude}°E). The page is a static build — data is
+      baked in at deploy time and refreshed each morning.
+    </p>
+    {
+      source === 'synthetic' && (
+        <p class="notice">
+          <strong>Placeholder data.</strong> {source_note} The chart shapes and the pipeline are
+          real; the numbers are not. Swap the generator for a live source before reading anything
+          into them.
+        </p>
+      )
+    }
+  </header>
+
+  <section class="summary">
+    <div class="card hero">
+      <p class="stat-label">Mean temperature, {dayLabel(daily.time[last])}</p>
+      <p class="stat-value">{one(latestValue)}{unit}</p>
+      <p class="stat-detail">{signed(delta)}{unit} against the trailing 30-day mean</p>
+    </div>
+
+    <div class="card">
+      <p class="stat-label">Warmest day</p>
+      <p class="stat-value">{one(high[hottest])}{unit}</p>
+      <p class="stat-detail">{dayLabel(daily.time[hottest])}</p>
+    </div>
+
+    <div class="card">
+      <p class="stat-label">Coldest day</p>
+      <p class="stat-value">{one(low[coldest])}{unit}</p>
+      <p class="stat-detail">{dayLabel(daily.time[coldest])}</p>
+    </div>
+
+    <div class="card">
+      <p class="stat-label">Annual mean</p>
+      <p class="stat-value">{one(average(mean))}{unit}</p>
+      <p class="stat-detail">Across {n} days</p>
+    </div>
+
+    <div class="card">
+      <p class="stat-label">Total rainfall</p>
+      <p class="stat-value">{Math.round(total(precipitation))} {rainUnit}</p>
+      <p class="stat-detail">{wetDays} days with 1 {rainUnit} or more</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Daily temperature</h2>
+    <p class="card-sub">
+      Line is the daily mean; the band spans each day's low to high. Hover for a single day.
+    </p>
+    <TemperatureChart daily={daily} units={units} />
+  </section>
+
+  <section class="card">
+    <h2>Monthly rainfall</h2>
+    <p class="card-sub">
+      Total precipitation per complete calendar month. Partial months at the edges of the window
+      are excluded.
+    </p>
+    <PrecipitationChart months={months} unit={rainUnit} />
+  </section>
+
+  <section class="card table-view">
+    <details>
+      <summary>View the data as a table</summary>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Month</th>
+              <th scope="col">Mean ({unit})</th>
+              <th scope="col">High ({unit})</th>
+              <th scope="col">Low ({unit})</th>
+              <th scope="col">Rainfall ({rainUnit})</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              months.map((month) => (
+                <tr>
+                  <th scope="row">
+                    {month.label} {month.year}
+                  </th>
+                  <td>{one(month.meanTemp)}</td>
+                  <td>{one(month.maxTemp)}</td>
+                  <td>{one(month.minTemp)}</td>
+                  <td>{Math.round(month.precipitation)}</td>
+                </tr>
+              ))
+            }
+          </tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <footer class="page-footer">
+    <p>
+      Built {generated} UTC · source: {source} · timezone {location.timezone}
+    </p>
+  </footer>
+</Base>
