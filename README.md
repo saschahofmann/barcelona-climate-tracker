@@ -168,28 +168,55 @@ Settings → Pages.
 `astro.config.mjs` sets `base: '/barcelona-climate-tracker'` because this is a project
 page. Drop that line if the site moves to a custom domain.
 
-## Next step: the daily fetch
+## The daily fetch
 
-Add a second workflow rather than folding the fetch into the deploy:
+`.github/workflows/fetch-data.yml` runs at 06:00 UTC, updates both sources, and commits
+only if something changed. `deploy.yml` then rebuilds via `workflow_run`.
 
-1. `fetch-era5.yml` — cron `0 6 * * *`, runs `pixi run fetch-era5`, commits `data/era5/`
-   with `contents: write`. Needs `ECMWF_API_KEY` as a repo secret.
-2. `deploy.yml` triggers off it via `workflow_run` — commits made with `GITHUB_TOKEN`
-   don't fire a `push` event, so a `push` trigger alone would never run.
+**Repo secrets:** `ECMWF_API_KEY` (required, ERA5). `SOCRATA_APP_TOKEN` is optional — it
+only lifts the anonymous rate limit on the XEMA mirror.
 
-Splitting them means a failed fetch leaves the last good deploy standing, and the site
-can be rebuilt without re-fetching.
+### How it decides what is missing
 
-Things that bite:
+There is no run-history lookup. Each fetcher reads the newest day already committed under
+`data/`, subtracts a trailing window, and pulls from there:
 
-- GitHub's cron drifts 5–60 minutes and occasionally skips a run. ERA5 lags ~5 days
-  anyway, so make the fetch re-request a trailing window rather than only "yesterday".
+| | trailing window | why |
+|---|---|---|
+| ERA5 | 10 days | lands ~5 days behind real time, and preliminary ERA5T values get revised |
+| XEMA | 7 days | the newest day is usually partial, and recent rows are unvalidated |
+
+**State lives in the committed data, not in workflow metadata.** A skipped, cancelled or
+failed run needs no special handling — the next run sees older files and backfills further
+back on its own. That matters because GitHub cron drifts 5–60 minutes and does
+occasionally drop a run entirely.
+
+Both fetchers are idempotent: a run with nothing new reports `0 new, 0 file(s) changed`,
+`git diff --quiet` sees nothing, and no commit happens.
+
+### Other decisions
+
+- **Each source can fail independently.** Both steps are `continue-on-error`, so a dead
+  ECMWF endpoint cannot stop the station update. Whatever landed is committed, and *then*
+  the job fails so the failure stays visible.
+- **`workflow_run` on deploy is required, not decorative.** Commits pushed with
+  `GITHUB_TOKEN` deliberately do not fire `push`, so a `push`-only deploy would let data
+  land and never ship. It runs on completion regardless of conclusion, since the fetch
+  commits before failing.
+- **`locked: true` on setup-pixi** fails the run if `pixi.lock` has drifted from
+  `pyproject.toml`, rather than quietly installing something else.
+- `pyproject.toml` lists **both `osx-arm64` and `linux-64`** — the lockfile needs the
+  runner platform or the install fails.
 - Scheduled workflows auto-disable after 60 days of repo inactivity. Daily data commits
-  count as activity, so this is self-solving here.
-- ERA5 goes back to 1940. Pushing `START_YEAR` earlier costs only fetch time and repo
-  size, but the whole archive inlined into the page would stop being free — at some
-  point the data has to move to files fetched on demand instead.
+  count as activity, so this is self-solving.
+- ERA5 goes back to 1940. Pushing `RECORD_START` earlier costs only fetch time and repo
+  size, but the whole archive inlined into a page would stop being free — at some point
+  the data has to move to files fetched on demand instead.
 
+Force a complete re-download from the Actions tab: run the workflow manually with **full**
+ticked, which passes `--full` to both fetchers. Worth doing occasionally — the trailing
+window does not reach back far enough to pick up ERA5T→ERA5 revisions, which land months
+later.
 ## The chart
 
 `src/lib/season-chart.js` holds the model builder and SVG renderer. Astro calls it at

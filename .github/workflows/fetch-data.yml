@@ -1,0 +1,83 @@
+name: Fetch latest data
+
+on:
+  # ERA5 lands ~5 days behind real time and XEMA within a day, so once each
+  # morning is plenty. GitHub's cron drifts 5–60 minutes and occasionally skips
+  # a run entirely — that is fine here, because each run works out for itself
+  # what is missing rather than assuming it runs exactly once a day.
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Re-download the entire record instead of the recent window"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+# Never let two fetches race on the same files.
+concurrency:
+  group: fetch-data
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: prefix-dev/setup-pixi@v0.10.1
+        with:
+          # Fail loudly if pixi.lock has drifted from pyproject.toml rather than
+          # quietly installing something other than what was solved locally.
+          locked: true
+          cache: true
+
+      # Each fetcher reads the newest day already committed under data/ and
+      # pulls only from there, so there is no run history to consult and a
+      # skipped or failed run simply backfills on the next one.
+      #
+      # continue-on-error so one source being down cannot block the other; the
+      # job still fails at the end, after whatever did land has been committed.
+      - name: Fetch ERA5
+        id: era5
+        continue-on-error: true
+        env:
+          ECMWF_API_KEY: ${{ secrets.ECMWF_API_KEY }}
+        run: pixi run fetch-era5 ${{ inputs.full && '--full' || '' }}
+
+      - name: Fetch XEMA station
+        id: xema
+        continue-on-error: true
+        # env:
+        #   SOCRATA_APP_TOKEN: ${{ secrets.SOCRATA_APP_TOKEN }}
+        run: pixi run fetch-xema ${{ inputs.full && '--full' || '' }}
+
+      - name: Commit new data
+        id: commit
+        run: |
+          if git diff --quiet -- data/; then
+            echo "No new data."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/
+          git commit -m "Update climate data ($(date -u +%Y-%m-%d))"
+          git push
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Report
+        run: |
+          echo "ERA5:   ${{ steps.era5.outcome }}"  >> "$GITHUB_STEP_SUMMARY"
+          echo "XEMA:   ${{ steps.xema.outcome }}"  >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: ${{ steps.commit.outputs.changed == 'true' && 'pushed' || 'nothing new' }}" >> "$GITHUB_STEP_SUMMARY"
+          # Surface a failed source even though the run already committed
+          # whatever the other one produced.
+          if [ "${{ steps.era5.outcome }}" != "success" ] || [ "${{ steps.xema.outcome }}" != "success" ]; then
+            echo "::error::At least one fetch failed — see the step logs."
+            exit 1
+          fi

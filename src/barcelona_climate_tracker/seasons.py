@@ -134,6 +134,41 @@ def write_season_files(frame: pd.DataFrame, output_dir: Path) -> list[dict]:
     return manifest
 
 
+def load_existing(output_dir: Path) -> pd.DataFrame:
+    """Rebuild the stored daily frame from the season files already on disk.
+
+    This is what makes the fetchers resumable: the state lives in the committed
+    data, not in run metadata, so a run after a failed one just picks up where
+    the files left off.
+    """
+    rows = {}
+    for path in sorted(output_dir.glob("[0-9]*.json")):
+        payload = json.loads(path.read_text())
+        for i, iso in enumerate(payload["time"]):
+            rows[iso] = {
+                name: payload[name][i] for name in SERIES_DIGITS if name in payload
+            }
+
+    if not rows:
+        return pd.DataFrame()
+
+    frame = pd.DataFrame.from_dict(rows, orient="index")
+    frame.index = pd.to_datetime(frame.index)
+    return frame.sort_index()
+
+
+def merge(fresh: pd.DataFrame, existing: pd.DataFrame) -> pd.DataFrame:
+    """Freshly downloaded days win, so revised values replace stored ones."""
+    if existing.empty:
+        combined = fresh
+    elif fresh.empty:
+        combined = existing
+    else:
+        combined = fresh.combine_first(existing)
+    combined = combined.sort_index()
+    return combined[[name for name in SERIES_DIGITS if name in combined.columns]]
+
+
 def write_manifest(
     manifest: list[dict], output_dir: Path, location: dict, source: str
 ) -> None:

@@ -3,6 +3,13 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # A commit pushed by the fetch job uses GITHUB_TOKEN, which by design does not
+  # fire `push` — without this the data would land and never deploy. Runs on
+  # completion regardless of conclusion, because the fetch commits whatever it
+  # managed to get before failing on a dead source.
+  workflow_run:
+    workflows: ['Fetch latest data']
+    types: [completed]
   workflow_dispatch:
 
 # Least privilege: read the repo, mint an OIDC token, publish to Pages.

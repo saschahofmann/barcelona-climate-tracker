@@ -14,7 +14,6 @@ if you have one.
 """
 
 import argparse
-import json
 import os
 import sys
 from datetime import UTC, date, datetime, timedelta
@@ -26,6 +25,8 @@ from dotenv import load_dotenv
 
 from barcelona_climate_tracker.seasons import (
     SERIES_DIGITS,
+    load_existing,
+    merge,
     write_manifest,
     write_season_files,
 )
@@ -198,24 +199,6 @@ def to_daily(readings: pd.DataFrame) -> pd.DataFrame:
     return daily[[name for name in SERIES_DIGITS if name in daily.columns]]
 
 
-def load_existing(output_dir: Path) -> pd.DataFrame:
-    """Rebuild the stored daily frame from the season files already on disk."""
-    rows = {}
-    for path in sorted(output_dir.glob("[0-9]*.json")):
-        payload = json.loads(path.read_text())
-        for i, iso in enumerate(payload["time"]):
-            rows[iso] = {
-                name: payload[name][i] for name in SERIES_DIGITS if name in payload
-            }
-
-    if not rows:
-        return pd.DataFrame()
-
-    frame = pd.DataFrame.from_dict(rows, orient="index")
-    frame.index = pd.to_datetime(frame.index)
-    return frame.sort_index()
-
-
 def download(start: date, end: date) -> pd.DataFrame:
     session = requests.Session()
     token = os.getenv("SOCRATA_APP_TOKEN")
@@ -270,10 +253,7 @@ def main() -> None:
     if fresh.empty and existing.empty:
         raise SystemExit("No data returned — nothing to write.")
 
-    # Freshly downloaded days win, so revised values replace stored ones.
-    combined = fresh if existing.empty else fresh.combine_first(existing)
-    combined = combined.sort_index()
-    combined = combined[[name for name in SERIES_DIGITS if name in combined.columns]]
+    combined = merge(fresh, existing)
 
     added = 0 if existing.empty else len(combined.index.difference(existing.index))
     print(f"{len(combined)} days total ({added} new, {len(fresh)} fetched).")
