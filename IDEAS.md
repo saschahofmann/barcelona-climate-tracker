@@ -3,8 +3,8 @@
 ## Add daily update of data
 The data needs to be fetched daily und trigger redeploy of the page.
 
-## Implement station data
-Instead of ERA5 implement the usage of station data and the selection of different places across the city.
+## Implement Fabra Station data
+We now have ERA5 and Raval station data add the data for the Fabra station that has over 100years of consistent climate data.
 
 ## Implement different cities
 Start with ERA5 but add station data quickly.

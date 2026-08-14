@@ -39,7 +39,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
   <h2>Daily conditions by season</h2>
   <p class="card-sub">
     Compare up to {MAX_YEARS} years day for day. Clicking a year brings it to the front and shows
-    its daily low–high band; the × on a selected year removes it.
+    its daily low–high band; clicking it again hides the band. The × removes it.
   </p>
 
   <div class="controls">
@@ -610,23 +610,29 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
         .map((entry) => ({ ...entry, data: dataFor(entry.year) }));
     }
 
-    const newestSelected = () =>
-      state.selected.length ? Math.max(...state.selected.map((entry) => entry.year)) : null;
-
-    /** Selecting is always additive; removal is the × button's job alone. */
+    /**
+     * Selecting is always additive — removal is the × button's job alone.
+     * Clicking the year that is already at the front instead clears the focus,
+     * which drops the band while leaving every series plotted.
+     */
     function selectYear(year) {
       if (!isAvailable(year)) return;
+
       if (!state.selected.some((entry) => entry.year === year)) {
         if (state.selected.length >= MAX_YEARS) return;
         state.selected.push({ year, slot: freeSlot() });
+        state.focus = year;
+      } else {
+        state.focus = state.focus === year ? null : year;
       }
-      state.focus = year;
       render();
     }
 
     function removeYear(year) {
       state.selected = state.selected.filter((entry) => entry.year !== year);
-      if (state.focus === year) state.focus = newestSelected();
+      // Don't silently promote another year — the band appears when a year is
+      // clicked, and only then.
+      if (state.focus === year) state.focus = null;
       render();
     }
 
@@ -641,7 +647,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       // Years absent from the new season drop out, freeing their slots.
       state.selected = state.selected.filter((entry) => isAvailable(entry.year));
       if (!state.selected.some((entry) => entry.year === state.focus)) {
-        state.focus = newestSelected();
+        state.focus = null;
       }
       render();
     }
@@ -693,7 +699,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
           .map((values) => `<td>${formatValue(values[i], state.measure)}</td>`)
           .join('');
         rows.push(
-          `<tr><th scope="row">${dayOf(addDays(current.focusStart, i))}</th>${cells}</tr>`
+          `<tr><th scope="row">${dayOf(addDays(current.dateStart, i))}</th>${cells}</tr>`
         );
       }
 
@@ -828,7 +834,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       crossLine.setAttribute('x2', x);
       figure.classList.add('is-active');
       tooltip.hidden = false;
-      tooltip.innerHTML = `<strong>${dayOf(addDays(model.focusStart, i))}</strong>${rows.join('')}`;
+      tooltip.innerHTML = `<strong>${dayOf(addDays(model.dateStart, i))}</strong>${rows.join('')}`;
 
       const half = tooltip.offsetWidth / 2;
       const px = (x / W) * rect.width;

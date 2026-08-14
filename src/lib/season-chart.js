@@ -89,7 +89,7 @@ export const formatValue = (value, measure) =>
 
 /**
  * @param entries  [{ year, slot, data }] in the order they should be drawn
- * @param focus    year whose low–high band is shown (stat measures only)
+ * @param focus    year whose low–high band is shown, or null for no band
  * @param measure  'tas' | 'hurs' | 'pr'
  * @param stat     'min' | 'mean' | 'max' — ignored when the measure has no stats
  */
@@ -97,14 +97,17 @@ export function buildModel({ entries, focus, measure, stat }) {
   if (entries.length === 0) return null;
 
   const spec = measureOf(measure);
-  const focusEntry = entries.find((entry) => entry.year === focus) ?? entries[0];
+  // Focus is genuinely optional: clicking the front year clears it, leaving
+  // every series plotted with no band at all.
+  const focusEntry = focus == null ? null : (entries.find((e) => e.year === focus) ?? null);
   const maxDays = Math.max(...entries.map((entry) => entry.data.days));
 
   const plotted = entries.map((entry) => seriesValues(entry.data, measure, stat));
 
   // The band is the focus year's full low–high, so the domain has to cover it
-  // even when the plotted stat is narrower. Rain has no band.
-  const banded = spec.stats;
+  // even when the plotted stat is narrower. Rain has no band, nor does an
+  // unfocused chart.
+  const banded = spec.stats && focusEntry !== null;
   const values = [
     ...plotted.flat(),
     ...(banded ? focusEntry.data[measure].min : []),
@@ -141,8 +144,8 @@ export function buildModel({ entries, focus, measure, stat }) {
   };
 
   let bandPath = '';
-  const focusDays = focusEntry.data.days;
   if (banded) {
+    const focusDays = focusEntry.data.days;
     const highs = focusEntry.data[measure].max;
     const lows = focusEntry.data[measure].min;
 
@@ -197,7 +200,7 @@ export function buildModel({ entries, focus, measure, stat }) {
     return {
       year: entry.year,
       slot: entry.slot,
-      isFocus: entry.year === focusEntry.year,
+      isFocus: focusEntry !== null && entry.year === focusEntry.year,
       days: entry.data.days,
       path: linePath(plotted[index]),
       hasData: lastIndex >= 0,
@@ -213,8 +216,10 @@ export function buildModel({ entries, focus, measure, stat }) {
     banded,
     cumulative: Boolean(spec.cumulative),
     maxDays,
-    focus: focusEntry.year,
-    focusStart: focusEntry.data.start,
+    focus: focusEntry === null ? null : focusEntry.year,
+    // Only day-and-month is ever shown, and every entry shares those, so any
+    // series can date the axis when no year is focused.
+    dateStart: (focusEntry ?? entries[0]).data.start,
     domain: scale,
     ticks: scale.ticks,
     monthTicks,
@@ -264,11 +269,13 @@ export function renderSvg(model) {
     .join('');
 
   // Only the focus year is direct-labelled; the legend carries the rest, which
-  // keeps five converging line-ends from colliding into noise.
-  const endMark = focus.hasData
-    ? `<circle class="end-dot" style="--series:var(--series-${focus.slot})" cx="${focus.endX}" cy="${focus.endY}" r="4"/>` +
-      `<text class="end-label" x="${focus.endX + 10}" y="${focus.endY + 4}">${focus.year}</text>`
-    : '';
+  // keeps five converging line-ends from colliding into noise. With no focus
+  // there is nothing to single out, so the legend carries identity alone.
+  const endMark =
+    focus && focus.hasData
+      ? `<circle class="end-dot" style="--series:var(--series-${focus.slot})" cx="${focus.endX}" cy="${focus.endY}" r="4"/>` +
+        `<text class="end-label" x="${focus.endX + 10}" y="${focus.endY + 4}">${focus.year}</text>`
+      : '';
 
   const dots = model.series
     .map((entry) => `<circle r="4" cx="0" cy="0" style="--series:var(--series-${entry.slot})"/>`)
