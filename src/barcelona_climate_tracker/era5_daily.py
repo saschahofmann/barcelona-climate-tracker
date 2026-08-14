@@ -14,6 +14,7 @@ from pathlib import Path
 import xarray as xr
 from dotenv import load_dotenv
 from xclim.core.units import convert_units_to
+from xclim.indices import relative_humidity
 
 load_dotenv()
 ECMWF_API_KEY = os.getenv("ECMWF_API_KEY")
@@ -44,28 +45,54 @@ MONTH_TO_SEASON = {
 
 OUTPUT_DIR = Path(__file__).resolve().parents[2] / "data" / "era5"
 
+# Decimal places per series. Humidity is whole percent — the extra digit would
+# be false precision and it inflates the payload the page inlines.
+SERIES_DIGITS = {
+    "tasmin": 1,
+    "tasmean": 1,
+    "tasmax": 1,
+    "hursmin": 0,
+    "hursmean": 0,
+    "hursmax": 0,
+    "prsum": 1,
+}
 
-def load_daily_temperature(start_year: int, end_year: int) -> xr.Dataset:
-    """Daily min/mean/max 2m temperature at the Barcelona gridpoint, in °C."""
+UNITS = {"tas": "degC", "hurs": "%", "pr": "mm"}
+
+
+def load_daily(start_year: int, end_year: int) -> xr.Dataset:
+    """Daily temperature, relative humidity and precipitation at Barcelona."""
     storage_options = {"headers": {"Authorization": f"Bearer {ECMWF_API_KEY}"}}
     era5 = xr.open_zarr(ERA5_URL, storage_options=storage_options)
 
     # ERA5 timestamps are UTC. Barcelona is UTC+1/+2, so a "day" here is offset
-    # by an hour or two against local midnight — immaterial for the mean, worth
-    # knowing for the extremes.
-    hourly = (
-        convert_units_to(era5.t2m, "degC")
-        .sel(time=slice(str(start_year), str(end_year)))
-        .sel(longitude=BARCELONA_LON, latitude=BARCELONA_LAT, method="nearest")
+    # by an hour or two against local midnight — immaterial for the means, worth
+    # knowing for the extremes and for where a rainy night lands.
+    point = era5.sel(time=slice(str(start_year), str(end_year))).sel(
+        longitude=BARCELONA_LON, latitude=BARCELONA_LAT, method="nearest"
     )
+
+    tas = convert_units_to(point.t2m, "degC")
+
+    # ERA5 single levels carries no relative humidity, only 2m dewpoint, so
+    # derive it from the temperature/dewpoint pair.
+    hurs = relative_humidity(tas=point.t2m, tdps=point.d2m, method="sonntag90")
+
+    # `tp` is metres accumulated over the preceding hour; summing the 24 hourly
+    # values and scaling gives the daily total in mm.
+    pr = point.tp * 1000.0
 
     # Min/max come from the 24 hourly samples, so they sit fractionally inside
     # the true daily extremes, which fall between samples.
     return xr.Dataset(
         {
-            "tasmin": hourly.resample(time="1D").min(),
-            "tasmean": hourly.resample(time="1D").mean(),
-            "tasmax": hourly.resample(time="1D").max(),
+            "tasmin": tas.resample(time="1D").min(),
+            "tasmean": tas.resample(time="1D").mean(),
+            "tasmax": tas.resample(time="1D").max(),
+            "hursmin": hurs.resample(time="1D").min(),
+            "hursmean": hurs.resample(time="1D").mean(),
+            "hursmax": hurs.resample(time="1D").max(),
+            "prsum": pr.resample(time="1D").sum(),
         }
     )
 
@@ -80,15 +107,21 @@ def expected_days(season_year: int, season: str) -> int:
     return total
 
 
-def to_series(values) -> list[float | None]:
-    """Round to 1dp — ERA5 float64 precision is noise at chart scale."""
-    return [None if math.isnan(v) else round(float(v), 1) for v in values]
+def to_series(values, digits: int) -> list[float | int | None]:
+    """Round down to chart precision — ERA5 float64 detail is noise here."""
+    return [
+        None
+        if math.isnan(v)
+        else (round(float(v)) if digits == 0 else round(float(v), digits))
+        for v in values
+    ]
 
 
 def write_season_files(daily: xr.Dataset, output_dir: Path) -> list[dict]:
     """One JSON file per (season year, season). Returns the manifest entries."""
     # Drop the scalar lat/lon coords so the frame is indexed by time alone.
     frame = daily.reset_coords(drop=True).to_dataframe().sort_index()
+    series_names = [name for name in SERIES_DIGITS if name in frame.columns]
 
     months = frame.index.month
     frame["season"] = [MONTH_TO_SEASON[month] for month in months]
@@ -113,11 +146,12 @@ def write_season_files(daily: xr.Dataset, output_dir: Path) -> list[dict]:
             "start_date": group.index[0].strftime("%Y-%m-%d"),
             "days": days,
             "complete": complete,
-            "units": "degC",
+            "units": UNITS,
             "time": [ts.strftime("%Y-%m-%d") for ts in group.index],
-            "tasmin": to_series(group["tasmin"]),
-            "tasmean": to_series(group["tasmean"]),
-            "tasmax": to_series(group["tasmax"]),
+            **{
+                name: to_series(group[name], SERIES_DIGITS[name])
+                for name in series_names
+            },
         }
 
         filename = f"{season_year}-{season}.json"
@@ -151,8 +185,8 @@ def write_manifest(manifest: list[dict], output_dir: Path) -> None:
             "longitude": BARCELONA_LON,
         },
         "source": "ERA5 reanalysis (ECMWF ARCO)",
-        "variables": ["tasmin", "tasmean", "tasmax"],
-        "units": "degC",
+        "variables": list(SERIES_DIGITS),
+        "units": UNITS,
         # Chronological, not alphabetical — DJF, MAM, JJA, SON.
         "seasons": sorted(
             manifest,
@@ -173,7 +207,7 @@ def main() -> None:
             "ECMWF_API_KEY is not set — put it in .env or the environment."
         )
 
-    daily = load_daily_temperature(START_YEAR, END_YEAR)
+    daily = load_daily(START_YEAR, END_YEAR)
     manifest = write_season_files(daily, OUTPUT_DIR)
     write_manifest(manifest, OUTPUT_DIR)
 

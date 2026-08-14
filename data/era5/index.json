@@ -8,9 +8,17 @@
   "variables": [
     "tasmin",
     "tasmean",
-    "tasmax"
+    "tasmax",
+    "hursmin",
+    "hursmean",
+    "hursmax",
+    "prsum"
   ],
-  "units": "degC",
+  "units": {
+    "tas": "degC",
+    "hurs": "%",
+    "pr": "mm"
+  },
   "seasons": [
     {
       "file": "2000-DJF.json",

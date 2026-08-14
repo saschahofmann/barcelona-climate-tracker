@@ -8,10 +8,10 @@ GitHub Pages by Actions.
 
 ## Data
 
-Daily minimum, mean and maximum 2m temperature from the **ERA5 reanalysis**, read
-directly from ECMWF's ARCO Zarr store, covering **2000–2026** (107 seasons).
-`src/barcelona_climate_tracker/era5_daily.py` fetches it and writes one JSON file per
-season to `data/era5/`:
+Daily **temperature**, **relative humidity** and **precipitation** from the ERA5
+reanalysis, read directly from ECMWF's ARCO Zarr store, covering **2000–2026**
+(107 seasons). `src/barcelona_climate_tracker/era5_daily.py` fetches it and writes one
+JSON file per season to `data/era5/`:
 
 ```
 data/era5/2026-JJA.json     season year + season code
@@ -26,11 +26,29 @@ maths in the frontend.
 {
   "season_year": 2026, "season": "JJA",
   "start_date": "2026-06-01", "days": 63, "complete": false,
-  "units": "degC",
+  "units": { "tas": "degC", "hurs": "%", "pr": "mm" },
   "time": ["2026-06-01", "..."],
-  "tasmin": [18.2, "..."], "tasmean": [21.1, "..."], "tasmax": [24.8, "..."]
+  "tasmin": [18.2, "..."], "tasmean": [21.1, "..."], "tasmax": [24.8, "..."],
+  "hursmin": [53, "..."], "hursmean": [70, "..."], "hursmax": [87, "..."],
+  "prsum": [0.0, 0.1, "..."]
 }
 ```
+
+Two derivations worth knowing:
+
+- **Relative humidity is not an ERA5 variable.** Single levels carries 2m dewpoint
+  (`d2m`) only, so `hurs` is derived from the temperature/dewpoint pair via xclim's
+  `relative_humidity` (Sonntag 1990).
+- **`tp` is metres accumulated over the preceding hour**, so `prsum` is the 24 hourly
+  values summed and scaled to mm.
+
+Humidity is stored as whole percent — the extra digit would be false precision.
+
+> **`hurs*` is fetched and stored but not charted.** The humidity view wasn't useful, so
+> it is excluded from the measures the page offers and from the payload the page inlines
+> (it was a third of it). The data is still written on every fetch, so bringing it back
+> is a two-line change — a `MEASURES` entry in `src/lib/season-chart.js` and a line in
+> the dataset shape in `src/pages/index.astro` — with no re-fetch.
 
 Conventions worth knowing:
 
@@ -108,16 +126,25 @@ Things that bite:
 build time to emit the default view; the browser calls the same functions to re-render
 on interaction, so build and runtime output cannot drift.
 
-Controls: season (4), plotted series (mean / minimum / maximum), and up to **5 years**
-from 2000–2026. Clicking a year brings it to the front — it gets the daily low–high band
-and a heavier stroke. Selection is purely additive; removal is the × on a selected chip,
-or "Clear all". Each chip is a wrapper holding two buttons, since a button cannot nest
-inside another button.
+Controls: season (4), measure (temperature / precipitation), series
+(mean / minimum / maximum), and up to **5 years** from 2000–2026. Clicking a year brings
+it to the front — it gets the daily low–high band and a heavier stroke. Selection is
+purely additive; removal is the × on a selected chip, or "Clear all". Each chip is a
+wrapper holding two buttons, since a button cannot nest inside another button.
+
+**Precipitation is plotted cumulatively** across the season, and the series control
+hides for it. A daily total has no min/mean/max to choose between, and five years of
+spiky daily rainfall overlaid is unreadable — running totals stay comparable and answer
+the actual question ("is this year running wet or dry?"). The day's own rainfall is in
+the tooltip as `+x`.
 
 Each selected year holds a colour slot until it is deselected, so removing one year never
 repaints the others. The five slots are validated for colour-vision deficiency and
 contrast in both light and dark mode; three of them fall below 3:1 on the light surface,
 which is why the legend swatches and the table view are not optional.
 
-All 27 years of all four seasons are inlined into the HTML (~44 KB gzipped), so switching
-seasons or years costs no network round trip.
+All 27 years of all four seasons, across the four charted series, are inlined into the
+HTML (~53 KB gzipped), so switching seasons, measures or years costs no network round
+trip. If that grows again, the escape hatch is to emit one JSON file per season via an
+Astro static endpoint and fetch on demand — cheaper on first paint, but slower for
+anyone who clicks through more than one season.

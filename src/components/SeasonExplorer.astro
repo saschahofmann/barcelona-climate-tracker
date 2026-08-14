@@ -3,28 +3,28 @@ import {
   buildModel,
   renderSvg,
   MAX_YEARS,
-  VARIABLES,
+  MEASURES,
+  STATS,
   SEASON_NAMES,
   W,
   H,
 } from '../lib/season-chart.js';
 
-const { dataset, defaultSeason, defaultYears, defaultVariable } = Astro.props;
+const { dataset, defaultSeason, defaultYears, defaultMeasure, defaultStat } = Astro.props;
 
 const seasonCodes = Object.keys(SEASON_NAMES).filter((code) => dataset[code]);
 
 // Render the default view at build time so the chart is present before the
 // controls hydrate; the client re-renders through the same functions.
-const initialEntries = defaultYears.map((year, index) => ({
-  year,
-  slot: index + 1,
-  data: dataset[defaultSeason].years[year],
-}));
-
 const initialModel = buildModel({
-  entries: initialEntries,
+  entries: defaultYears.map((year, index) => ({
+    year,
+    slot: index + 1,
+    data: dataset[defaultSeason].years[year],
+  })),
   focus: defaultYears[0],
-  variable: defaultVariable,
+  measure: defaultMeasure,
+  stat: defaultStat,
 });
 const initialSvg = renderSvg(initialModel);
 
@@ -36,7 +36,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
 ---
 
 <section class="card explorer" data-explorer>
-  <h2>Daily temperature by season</h2>
+  <h2>Daily conditions by season</h2>
   <p class="card-sub">
     Compare up to {MAX_YEARS} years day for day. Clicking a year brings it to the front and shows
     its daily low–high band; the × on a selected year removes it.
@@ -61,16 +61,33 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     </div>
 
     <div class="control">
-      <span class="control-label" id="variable-label">Series</span>
-      <div class="chips" role="group" aria-labelledby="variable-label">
+      <span class="control-label" id="measure-label">Measure</span>
+      <div class="chips" role="group" aria-labelledby="measure-label">
         {
-          VARIABLES.map((variable) => (
+          MEASURES.map((measure) => (
             <button
               type="button"
-              data-variable={variable.key}
-              aria-pressed={variable.key === defaultVariable ? 'true' : 'false'}
+              data-measure={measure.key}
+              aria-pressed={measure.key === defaultMeasure ? 'true' : 'false'}
             >
-              {variable.label}
+              {measure.label}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="control" data-stat-control>
+      <span class="control-label" id="stat-label">Series</span>
+      <div class="chips" role="group" aria-labelledby="stat-label">
+        {
+          STATS.map((stat) => (
+            <button
+              type="button"
+              data-stat={stat.key}
+              aria-pressed={stat.key === defaultStat ? 'true' : 'false'}
+            >
+              {stat.label}
             </button>
           ))
         }
@@ -109,10 +126,11 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       viewBox={`0 0 ${W} ${H}`}
       role="img"
       data-chart
-      aria-label="Daily temperature for the selected season and years"
+      aria-label="Daily conditions for the selected season and years"
       set:html={initialSvg}
     />
     <div class="tooltip" hidden></div>
+    <p class="chart-note" data-note></p>
   </figure>
 
   <details class="table-view">
@@ -126,7 +144,8 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     data-initial
     set:html={JSON.stringify({
       season: defaultSeason,
-      variable: defaultVariable,
+      measure: defaultMeasure,
+      stat: defaultStat,
       years: defaultYears,
     })}
   />
@@ -179,8 +198,8 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     color: var(--text-primary);
   }
 
-  /* Season and series pills only — year chips carry their own selected state
-     below, and these would otherwise out-specify it. */
+  /* Season, measure and series pills only — year chips carry their own selected
+     state below, and these would otherwise out-specify it. */
   .chips:not(.chips-years) button:disabled {
     opacity: 0.35;
     cursor: not-allowed;
@@ -280,7 +299,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
 
   /* Ink on a filled chip, not a text token: the fill is a series colour in both
      modes, and black clears 4.5:1 on all five (blue is tightest at 4.71).
-     Specificity has to beat both [data-selected] and [data-remove] above. */
+     Specificity has to beat both [data-selected] and [data-remove] below. */
   .chip[data-focus] button[data-year],
   .chip[data-focus] button[data-remove] {
     color: #0b0b0b;
@@ -353,6 +372,16 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     height: 10px;
     border-radius: 2px;
     opacity: 0.22;
+  }
+
+  .chart-note {
+    margin: 0.5rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+  }
+
+  .chart-note:empty {
+    display: none;
   }
 
   /* Scoped: the remove buttons hold their own inline <svg> icons. */
@@ -511,11 +540,15 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     buildModel,
     renderSvg,
     makeScale,
+    seriesValues,
+    formatValue,
+    measureOf,
     xAt,
     addDays,
     dayOf,
     MAX_YEARS,
-    VARIABLES,
+    MEASURES,
+    STATS,
     SEASON_NAMES,
     SERIES_SLOTS,
     W,
@@ -533,11 +566,14 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     const figure = root.querySelector('.chart');
     const legend = root.querySelector('[data-legend]');
     const tooltip = root.querySelector('.tooltip');
+    const note = root.querySelector('[data-note]');
     const tableHost = root.querySelector('[data-table]');
     const yearCount = root.querySelector('[data-year-count]');
 
     const seasonButtons = [...root.querySelectorAll('[data-season]')];
-    const variableButtons = [...root.querySelectorAll('[data-variable]')];
+    const measureButtons = [...root.querySelectorAll('[data-measure]')];
+    const statButtons = [...root.querySelectorAll('[data-stat]')];
+    const statControl = root.querySelector('[data-stat-control]');
     const yearButtons = [...root.querySelectorAll('[data-year]')];
     const removeButtons = [...root.querySelectorAll('[data-remove]')];
     const clearButton = root.querySelector('[data-clear]');
@@ -547,7 +583,8 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
 
     const state = {
       season: initial.season,
-      variable: initial.variable,
+      measure: initial.measure,
+      stat: initial.stat,
       // Ordered oldest-selected first; each entry keeps its colour slot.
       selected: initial.years.map((year, index) => ({ year, slot: index + 1 })),
       focus: initial.years[0],
@@ -557,6 +594,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
 
     const dataFor = (year) => dataset[state.season].years[year];
     const isAvailable = (year) => Boolean(dataFor(year));
+    const spec = () => measureOf(state.measure);
 
     function freeSlot() {
       const taken = new Set(state.selected.map((entry) => entry.slot));
@@ -620,11 +658,14 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
           '</span>'
         );
       });
-      const focus = current.series.find((series) => series.isFocus);
-      items.push(
-        `<span class="legend-item" style="--series:var(--series-${focus.slot})">` +
-          `<span class="key key-band"></span>${focus.year} daily low–high</span>`
-      );
+
+      if (current.banded) {
+        const focus = current.series.find((series) => series.isFocus);
+        items.push(
+          `<span class="legend-item" style="--series:var(--series-${focus.slot})">` +
+            `<span class="key key-band"></span>${focus.year} daily low–high</span>`
+        );
+      }
       legend.innerHTML = items.join('');
     }
 
@@ -633,26 +674,33 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
         tableHost.innerHTML = '';
         return;
       }
-      const label = VARIABLES.find((variable) => variable.key === state.variable).label;
+      const measure = spec();
       const head =
         '<tr><th scope="col">Date</th>' +
         current.series.map((series) => `<th scope="col">${series.year}</th>`).join('') +
         '</tr>';
 
+      const columns = current.series.map((series) =>
+        seriesValues(dataFor(series.year), state.measure, state.stat)
+      );
+
       const rows = [];
       for (let i = 0; i < current.maxDays; i++) {
-        const iso = addDays(current.focusStart, i);
-        const cells = current.series
-          .map((series) => {
-            const value = dataFor(series.year)[state.variable][i];
-            return `<td>${value == null ? '—' : value.toFixed(1)}</td>`;
-          })
+        const cells = columns
+          .map((values) => `<td>${formatValue(values[i], state.measure)}</td>`)
           .join('');
-        rows.push(`<tr><th scope="row">${dayOf(iso)}</th>${cells}</tr>`);
+        rows.push(
+          `<tr><th scope="row">${dayOf(addDays(current.focusStart, i))}</th>${cells}</tr>`
+        );
       }
 
+      const caption = measure.cumulative
+        ? `Cumulative precipitation through the season, in ${measure.unit}`
+        : `Daily ${STATS.find((stat) => stat.key === state.stat).label.toLowerCase()} ` +
+          `${measure.label.toLowerCase()}, in ${measure.unit}`;
+
       tableHost.innerHTML =
-        `<table><caption class="sr-only">Daily ${label.toLowerCase()} temperature in °C</caption>` +
+        `<table><caption class="sr-only">${caption}</caption>` +
         `<thead>${head}</thead><tbody>${rows.join('')}</tbody></table>`;
     }
 
@@ -660,9 +708,14 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       seasonButtons.forEach((button) =>
         button.setAttribute('aria-pressed', String(button.dataset.season === state.season))
       );
-      variableButtons.forEach((button) =>
-        button.setAttribute('aria-pressed', String(button.dataset.variable === state.variable))
+      measureButtons.forEach((button) =>
+        button.setAttribute('aria-pressed', String(button.dataset.measure === state.measure))
       );
+      statButtons.forEach((button) =>
+        button.setAttribute('aria-pressed', String(button.dataset.stat === state.stat))
+      );
+      // A daily total has no min/mean/max to choose between.
+      statControl.hidden = !spec().stats;
 
       const atLimit = state.selected.length >= MAX_YEARS;
       yearButtons.forEach((button) => {
@@ -693,15 +746,29 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     }
 
     function render() {
-      model = buildModel({ entries: entries(), focus: state.focus, variable: state.variable });
+      model = buildModel({
+        entries: entries(),
+        focus: state.focus,
+        measure: state.measure,
+        stat: state.stat,
+      });
       svg.innerHTML = renderSvg(model);
+
+      const measure = spec();
+      const statLabel = STATS.find((stat) => stat.key === state.stat).label.toLowerCase();
       svg.setAttribute(
         'aria-label',
         model
-          ? `Daily ${state.variable} temperature in Barcelona for ${SEASON_NAMES[state.season]}, ` +
-              `comparing ${model.series.map((series) => series.year).join(', ')}.`
+          ? `${measure.cumulative ? 'Cumulative' : `Daily ${statLabel}`} ${measure.label.toLowerCase()} ` +
+              `in Barcelona for ${SEASON_NAMES[state.season]}, comparing ` +
+              `${model.series.map((series) => series.year).join(', ')}.`
           : 'No years selected'
       );
+
+      note.textContent = measure.cumulative
+        ? 'Precipitation accumulates across the season — five years of daily totals overlaid would be unreadable. Hover for a single day’s rainfall.'
+        : '';
+
       renderLegend(model);
       renderControls();
       renderTable(model);
@@ -720,13 +787,11 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       const x = xAt(i, model.maxDays);
       const crossLine = svg.querySelector('.crosshair line');
       const dots = [...svg.querySelectorAll('.crosshair circle')];
-
-      crossLine.setAttribute('x1', x);
-      crossLine.setAttribute('x2', x);
+      const measure = spec();
 
       const rows = model.series.map((series, index) => {
         const data = dataFor(series.year);
-        const value = data[state.variable][i];
+        const value = seriesValues(data, state.measure, state.stat)[i];
         const dot = dots[index];
 
         if (value == null) {
@@ -737,14 +802,27 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
         dot.setAttribute('cx', x);
         dot.setAttribute('cy', y(value));
 
-        const extra = series.isFocus ? ` (${data.min[i].toFixed(1)}–${data.max[i].toFixed(1)})` : '';
+        let extra = '';
+        if (measure.cumulative) {
+          // The running total is what's plotted, so name the day's own rain too.
+          const daily = data.pr.sum[i];
+          extra = daily ? ` (+${formatValue(daily, state.measure)})` : '';
+        } else if (series.isFocus) {
+          const low = formatValue(data[state.measure].min[i], state.measure);
+          const high = formatValue(data[state.measure].max[i], state.measure);
+          extra = ` (${low}–${high})`;
+        }
+
         return (
           `<span class="row${series.isFocus ? ' row-focus' : ''}" ` +
           `style="--series:var(--series-${series.slot})">` +
-          `<span class="swatch"></span>${series.year} · ${value.toFixed(1)}°${extra}</span>`
+          `<span class="swatch"></span>${series.year} · ` +
+          `${formatValue(value, state.measure)}${measure.suffix}${extra}</span>`
         );
       });
 
+      crossLine.setAttribute('x1', x);
+      crossLine.setAttribute('x2', x);
       figure.classList.add('is-active');
       tooltip.hidden = false;
       tooltip.innerHTML = `<strong>${dayOf(addDays(model.focusStart, i))}</strong>${rows.join('')}`;
@@ -762,9 +840,15 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     seasonButtons.forEach((button) =>
       button.addEventListener('click', () => setSeason(button.dataset.season))
     );
-    variableButtons.forEach((button) =>
+    measureButtons.forEach((button) =>
       button.addEventListener('click', () => {
-        state.variable = button.dataset.variable;
+        state.measure = button.dataset.measure;
+        render();
+      })
+    );
+    statButtons.forEach((button) =>
+      button.addEventListener('click', () => {
+        state.stat = button.dataset.stat;
         render();
       })
     );

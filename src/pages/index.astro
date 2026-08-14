@@ -21,9 +21,10 @@ for (const file of files) {
     start: file.time[0],
     days: file.days,
     complete: file.complete,
-    mean: file.tasmean,
-    min: file.tasmin,
-    max: file.tasmax,
+    tas: { min: file.tasmin, mean: file.tasmean, max: file.tasmax },
+    // `hurs*` is fetched and stored but deliberately left out of the page: the
+    // humidity chart wasn't useful, and the arrays are a third of the payload.
+    pr: { sum: file.prsum },
   };
 }
 
@@ -58,7 +59,7 @@ const hottest = files.reduce(
   <header class="page-header">
     <h1>Barcelona Climate Tracker</h1>
     <p>
-      Daily minimum, mean and maximum 2m temperature for {manifest.location.name}
+      Daily temperature and precipitation for {manifest.location.name}
       ({manifest.location.latitude}°N, {manifest.location.longitude}°E), {firstYear} to {lastYear},
       from the {manifest.source}. Each season is charted on its own so any {MAX_YEARS} years can be
       laid over one another day for day.
@@ -75,14 +76,16 @@ const hottest = files.reduce(
     dataset={dataset}
     defaultSeason={defaultSeason}
     defaultYears={defaultYears}
-    defaultVariable="mean"
+    defaultMeasure="tas"
+    defaultStat="mean"
   />
 
   <footer class="page-footer">
     <p>
-      Source: {manifest.source}. Daily statistics aggregated from hourly 2m temperature in UTC,
-      so daily extremes sit fractionally inside the true local ones. Values in °C. Winter is
-      labelled by its January — DJF {lastYear} is December {lastYear - 1} through February {lastYear}.
+      Source: {manifest.source}. Daily statistics aggregated from hourly values in UTC, so daily
+      extremes sit fractionally inside the true local ones. Precipitation is the daily total.
+      Winter is labelled by its January — DJF {lastYear} is December {lastYear - 1} through
+      February {lastYear}.
     </p>
   </footer>
 </Base>

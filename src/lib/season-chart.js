@@ -10,15 +10,35 @@ import { niceTicks, r2 } from './chart.js';
 
 export const W = 900;
 export const H = 360;
-export const PAD = { top: 18, right: 72, bottom: 30, left: 46 };
+export const PAD = { top: 18, right: 72, bottom: 30, left: 54 };
 export const PLOT_W = W - PAD.left - PAD.right;
 export const PLOT_H = H - PAD.top - PAD.bottom;
 
 export const MAX_YEARS = 5;
 
-export const VARIABLES = [
-  { key: 'mean', label: 'Mean' },
+/**
+ * `stats: true` means the measure has min/mean/max and a daily low–high band.
+ * Precipitation has neither — it is a daily total, and five years of spiky
+ * daily bars overlaid is unreadable, so it accumulates across the season.
+ */
+export const MEASURES = [
+  { key: 'tas', label: 'Temperature', unit: '°C', suffix: '°', stats: true, digits: 1 },
+  {
+    key: 'pr',
+    label: 'Precipitation',
+    unit: 'mm',
+    suffix: 'mm',
+    stats: false,
+    digits: 1,
+    cumulative: true,
+  },
+];
+
+export const measureOf = (key) => MEASURES.find((measure) => measure.key === key) ?? MEASURES[0];
+
+export const STATS = [
   { key: 'min', label: 'Minimum' },
+  { key: 'mean', label: 'Mean' },
   { key: 'max', label: 'Maximum' },
 ];
 
@@ -55,25 +75,49 @@ export const xAt = (i, maxDays) =>
 export const makeScale = (domain) => (value) =>
   PAD.top + (1 - (value - domain.min) / (domain.max - domain.min)) * PLOT_H;
 
+/** The plotted series for one year: a running total for rain, else the stat. */
+export function seriesValues(data, measure, stat) {
+  if (measureOf(measure).cumulative) {
+    let running = 0;
+    return data[measure].sum.map((value) => (running += value ?? 0));
+  }
+  return data[measure][stat];
+}
+
+export const formatValue = (value, measure) =>
+  value == null ? '—' : value.toFixed(measureOf(measure).digits);
+
 /**
  * @param entries  [{ year, slot, data }] in the order they should be drawn
- * @param focus    year whose low–high band is shown
- * @param variable 'mean' | 'min' | 'max'
+ * @param focus    year whose low–high band is shown (stat measures only)
+ * @param measure  'tas' | 'hurs' | 'pr'
+ * @param stat     'min' | 'mean' | 'max' — ignored when the measure has no stats
  */
-export function buildModel({ entries, focus, variable }) {
+export function buildModel({ entries, focus, measure, stat }) {
   if (entries.length === 0) return null;
 
+  const spec = measureOf(measure);
   const focusEntry = entries.find((entry) => entry.year === focus) ?? entries[0];
   const maxDays = Math.max(...entries.map((entry) => entry.data.days));
 
-  // The band is always the focus year's full low–high, so the domain has to
-  // cover it even when the plotted variable is narrower.
+  const plotted = entries.map((entry) => seriesValues(entry.data, measure, stat));
+
+  // The band is the focus year's full low–high, so the domain has to cover it
+  // even when the plotted stat is narrower. Rain has no band.
+  const banded = spec.stats;
   const values = [
-    ...entries.flatMap((entry) => entry.data[variable]),
-    ...focusEntry.data.min,
-    ...focusEntry.data.max,
-  ];
-  const scale = niceTicks(Math.min(...values), Math.max(...values), 5);
+    ...plotted.flat(),
+    ...(banded ? focusEntry.data[measure].min : []),
+    ...(banded ? focusEntry.data[measure].max : []),
+  ].filter((value) => value != null);
+
+  // A running total starts at zero, so anchor the axis there rather than
+  // floating it at the first day's rainfall.
+  const scale = niceTicks(
+    spec.cumulative ? 0 : Math.min(...values),
+    Math.max(...values),
+    5
+  );
   const y = makeScale(scale);
   const x = (i) => xAt(i, maxDays);
 
@@ -82,13 +126,15 @@ export function buildModel({ entries, focus, variable }) {
 
   let bandPath = '';
   const focusDays = focusEntry.data.days;
-  for (let i = 0; i < focusDays; i++) {
-    bandPath += `${i ? 'L' : 'M'}${r2(x(i))},${r2(y(focusEntry.data.max[i]))}`;
+  if (banded) {
+    for (let i = 0; i < focusDays; i++) {
+      bandPath += `${i ? 'L' : 'M'}${r2(x(i))},${r2(y(focusEntry.data[measure].max[i]))}`;
+    }
+    for (let i = focusDays - 1; i >= 0; i--) {
+      bandPath += `L${r2(x(i))},${r2(y(focusEntry.data[measure].min[i]))}`;
+    }
+    bandPath += 'Z';
   }
-  for (let i = focusDays - 1; i >= 0; i--) {
-    bandPath += `L${r2(x(i))},${r2(y(focusEntry.data.min[i]))}`;
-  }
-  bandPath += 'Z';
 
   // Month boundaries. Every year shares the same month/day at a given index,
   // so any entry can supply the labels.
@@ -99,25 +145,28 @@ export function buildModel({ entries, focus, variable }) {
     if (iso.endsWith('-01')) monthTicks.push({ x: r2(x(i)), label: monthOf(iso) });
   }
 
-  const series = entries.map((entry) => {
+  const series = entries.map((entry, index) => {
     const lastIndex = entry.data.days - 1;
     return {
       year: entry.year,
       slot: entry.slot,
       isFocus: entry.year === focusEntry.year,
       days: entry.data.days,
-      path: linePath(entry.data[variable]),
+      path: linePath(plotted[index]),
       endX: r2(x(lastIndex)),
-      endY: r2(y(entry.data[variable][lastIndex])),
+      endY: r2(y(plotted[index][lastIndex])),
     };
   });
 
   return {
-    variable,
+    measure,
+    stat,
+    suffix: spec.suffix,
+    banded,
+    cumulative: Boolean(spec.cumulative),
     maxDays,
     focus: focusEntry.year,
     focusStart: focusEntry.data.start,
-    focusEnd: addDays(focusEntry.data.start, focusDays - 1),
     domain: scale,
     ticks: scale.ticks,
     monthTicks,
@@ -146,13 +195,17 @@ export function renderSvg(model) {
   const yTicks = model.ticks
     .map(
       (tick) =>
-        `<text x="${PAD.left - 10}" y="${r2(y(tick)) + 4}" text-anchor="end">${tick}°</text>`
+        `<text x="${PAD.left - 10}" y="${r2(y(tick)) + 4}" text-anchor="end">${tick}${model.suffix}</text>`
     )
     .join('');
 
   const xTicks = model.monthTicks
     .map((tick) => `<text x="${tick.x}" y="${H - 9}" text-anchor="middle">${tick.label}</text>`)
     .join('');
+
+  const band = model.banded
+    ? `<path class="band" style="--series:var(--series-${focus.slot})" d="${model.bandPath}"/>`
+    : '';
 
   const lines = model.series
     .map(
@@ -164,10 +217,9 @@ export function renderSvg(model) {
 
   // Only the focus year is direct-labelled; the legend carries the rest, which
   // keeps five converging line-ends from colliding into noise.
-  const endMark = focus
-    ? `<circle class="end-dot" style="--series:var(--series-${focus.slot})" cx="${focus.endX}" cy="${focus.endY}" r="4"/>` +
-      `<text class="end-label" x="${focus.endX + 10}" y="${focus.endY + 4}">${focus.year}</text>`
-    : '';
+  const endMark =
+    `<circle class="end-dot" style="--series:var(--series-${focus.slot})" cx="${focus.endX}" cy="${focus.endY}" r="4"/>` +
+    `<text class="end-label" x="${focus.endX + 10}" y="${focus.endY + 4}">${focus.year}</text>`;
 
   const dots = model.series
     .map((entry) => `<circle r="4" cx="0" cy="0" style="--series:var(--series-${entry.slot})"/>`)
@@ -175,7 +227,7 @@ export function renderSvg(model) {
 
   return (
     `<g class="grid">${grid}</g>` +
-    `<path class="band" style="--series:var(--series-${focus.slot})" d="${model.bandPath}"/>` +
+    band +
     lines +
     `<line class="baseline" x1="${PAD.left}" x2="${W - PAD.right}" y1="${model.baselineY}" y2="${model.baselineY}"/>` +
     `<g class="tick y">${yTicks}</g>` +
