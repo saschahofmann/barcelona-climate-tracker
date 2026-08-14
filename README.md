@@ -213,8 +213,22 @@ repaints the others. The five slots are validated for colour-vision deficiency a
 contrast in both light and dark mode; three of them fall below 3:1 on the light surface,
 which is why the legend swatches and the table view are not optional.
 
-All 27 years of all four seasons, across the four charted series, are inlined into the
-HTML (~53 KB gzipped), so switching seasons, measures or years costs no network round
-trip. If that grows again, the escape hatch is to emit one JSON file per season via an
-Astro static endpoint and fetch on demand — cheaper on first paint, but slower for
-anyone who clicks through more than one season.
+## Two pages, one per source
+
+| Page | Source | Years | Gzipped |
+|---|---|---|---|
+| `/` | ERA5 reanalysis | 2000–2026 | ~54 KB |
+| `/station/` | XEMA X4, el Raval | 2009–2026 | ~36 KB |
+
+The source is a **navigation choice, not a control**, so each page inlines only its own
+data. `src/lib/sources.js` holds both `import.meta.glob` calls — they run in Node during
+the build, so the unselected source never reaches the browser. Verified: no ERA5-only
+year appears in the station page's payload or vice versa.
+
+`src/components/SourcePage.astro` is the whole page body; `index.astro` and
+`station.astro` are four-line wrappers that pass a source key.
+
+Everything for the selected source is inlined, so switching seasons, measures or years
+costs no network round trip. If a page grows again, the escape hatch is to emit one JSON
+file per season via an Astro static endpoint and fetch on demand — cheaper on first
+paint, but slower for anyone who clicks through more than one season.

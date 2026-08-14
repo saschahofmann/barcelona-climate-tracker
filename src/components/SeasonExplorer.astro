@@ -574,7 +574,10 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     const measureButtons = [...root.querySelectorAll('[data-measure]')];
     const statButtons = [...root.querySelectorAll('[data-stat]')];
     const statControl = root.querySelector('[data-stat-control]');
-    const yearButtons = [...root.querySelectorAll('[data-year]')];
+    // Scoped to the chip row: the chart's own <path class="line"> elements also
+    // carry data-year, and an unscoped selector would bind handlers to SVG
+    // nodes that innerHTML replaces on the next render.
+    const yearButtons = [...root.querySelectorAll('.chips-years [data-year]')];
     const removeButtons = [...root.querySelectorAll('[data-remove]')];
     const clearButton = root.querySelector('[data-clear]');
     const chips = new Map(

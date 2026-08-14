@@ -1,0 +1,101 @@
+---
+import Base from '../layouts/Base.astro';
+import SeasonExplorer from './SeasonExplorer.astro';
+import { dayLabel } from '../lib/chart.js';
+import { MAX_YEARS } from '../lib/season-chart.js';
+import { SOURCES, loadSource } from '../lib/sources.js';
+
+const { sourceKey } = Astro.props;
+const { source, manifest, dataset, defaultSeason, defaultYears, firstYear, lastYear, hottest } =
+  loadSource(sourceKey);
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const link = (href) => `${base}/${href}`.replace(/\/+$/, '') || '/';
+---
+
+<Base
+  title={`Barcelona Climate Tracker — ${source.nav}`}
+  description={`Daily temperature and precipitation for Barcelona from the ${source.label}, ${firstYear}–${lastYear}.`}
+>
+  <header class="page-header">
+    <h1>Barcelona Climate Tracker</h1>
+
+    <nav class="sources" aria-label="Data source">
+      {
+        Object.values(SOURCES).map((entry) => (
+          <a href={link(entry.href)} aria-current={entry.key === source.key ? 'page' : undefined}>
+            {entry.nav}
+          </a>
+        ))
+      }
+    </nav>
+
+    <p>
+      Daily temperature and precipitation for Barcelona, {firstYear} to {lastYear}, from the
+      <strong>{source.label}</strong>. {source.blurb}
+    </p>
+    <p class="source-meta">
+      {manifest.location.name}
+      {manifest.location.station && ` · station ${manifest.location.station}`}
+      {manifest.location.altitude != null && ` · ${manifest.location.altitude} m`}
+      {` · ${manifest.location.latitude}°N, ${manifest.location.longitude}°E`}
+    </p>
+  </header>
+
+  <section class="card hero">
+    <p class="stat-label">Hottest day on record, {firstYear}–{lastYear}</p>
+    <p class="stat-value">{hottest.value.toFixed(1)}°C</p>
+    <p class="stat-detail">{dayLabel(hottest.date)} · daily maximum</p>
+  </section>
+
+  <SeasonExplorer
+    dataset={dataset}
+    defaultSeason={defaultSeason}
+    defaultYears={defaultYears}
+    defaultMeasure="tas"
+    defaultStat="mean"
+  />
+
+  <footer class="page-footer">
+    <p>
+      Source: {manifest.source}. Daily statistics aggregated in UTC. Precipitation is the daily
+      total. Winter is labelled by its January — DJF {lastYear} is December {lastYear - 1} through
+      February {lastYear}. Compare up to {MAX_YEARS} years at once; the two sources are on separate
+      pages so each stays small to load.
+    </p>
+  </footer>
+</Base>
+
+<style>
+  .sources {
+    display: flex;
+    gap: 0.4rem;
+    margin: 0.9rem 0 1rem;
+  }
+
+  .sources a {
+    padding: 0.3rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-decoration: none;
+  }
+
+  .sources a:hover {
+    border-color: var(--axis);
+    color: var(--text-primary);
+  }
+
+  .sources a[aria-current='page'] {
+    border-color: var(--text-primary);
+    background: var(--text-primary);
+    color: var(--surface-1);
+  }
+
+  .source-meta {
+    margin: 0.6rem 0 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+  }
+</style>
