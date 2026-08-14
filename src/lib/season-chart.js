@@ -109,7 +109,10 @@ export function buildModel({ entries, focus, measure, stat }) {
     ...plotted.flat(),
     ...(banded ? focusEntry.data[measure].min : []),
     ...(banded ? focusEntry.data[measure].max : []),
-  ].filter((value) => value != null);
+  ].filter((value) => value != null && Number.isFinite(value));
+
+  // Every selected year could be nothing but gaps for this measure.
+  if (values.length === 0) return null;
 
   // A running total starts at zero, so anchor the axis there rather than
   // floating it at the first day's rainfall.
@@ -121,19 +124,54 @@ export function buildModel({ entries, focus, measure, stat }) {
   const y = makeScale(scale);
   const x = (i) => xAt(i, maxDays);
 
-  const linePath = (series) =>
-    series.map((v, i) => `${i ? 'L' : 'M'}${r2(x(i))},${r2(y(v))}`).join('');
+  // Station records have gaps, so a null lifts the pen and the line resumes at
+  // the next reading rather than drawing a straight lie across the outage.
+  const linePath = (series) => {
+    let path = '';
+    let pen = 'M';
+    series.forEach((value, i) => {
+      if (value == null) {
+        pen = 'M';
+        return;
+      }
+      path += `${pen}${r2(x(i))},${r2(y(value))}`;
+      pen = 'L';
+    });
+    return path;
+  };
 
   let bandPath = '';
   const focusDays = focusEntry.data.days;
   if (banded) {
+    const highs = focusEntry.data[measure].max;
+    const lows = focusEntry.data[measure].min;
+
+    // One closed subpath per unbroken run, so a gap splits the band instead of
+    // closing it across the missing days.
+    const runs = [];
+    let run = [];
     for (let i = 0; i < focusDays; i++) {
-      bandPath += `${i ? 'L' : 'M'}${r2(x(i))},${r2(y(focusEntry.data[measure].max[i]))}`;
+      if (highs[i] == null || lows[i] == null) {
+        if (run.length) runs.push(run);
+        run = [];
+      } else {
+        run.push(i);
+      }
     }
-    for (let i = focusDays - 1; i >= 0; i--) {
-      bandPath += `L${r2(x(i))},${r2(y(focusEntry.data[measure].min[i]))}`;
-    }
-    bandPath += 'Z';
+    if (run.length) runs.push(run);
+
+    bandPath = runs
+      .map((indices) => {
+        let d = '';
+        indices.forEach((i, k) => {
+          d += `${k ? 'L' : 'M'}${r2(x(i))},${r2(y(highs[i]))}`;
+        });
+        for (let k = indices.length - 1; k >= 0; k--) {
+          d += `L${r2(x(indices[k]))},${r2(y(lows[indices[k]]))}`;
+        }
+        return `${d}Z`;
+      })
+      .join('');
   }
 
   // Month boundaries. Every year shares the same month/day at a given index,
@@ -145,16 +183,26 @@ export function buildModel({ entries, focus, measure, stat }) {
     if (iso.endsWith('-01')) monthTicks.push({ x: r2(x(i)), label: monthOf(iso) });
   }
 
+  // The end marker rides the last *reading*, which is not the last slot when a
+  // record trails off into missing days.
+  const lastReading = (values) => {
+    for (let i = values.length - 1; i >= 0; i--) {
+      if (values[i] != null) return i;
+    }
+    return -1;
+  };
+
   const series = entries.map((entry, index) => {
-    const lastIndex = entry.data.days - 1;
+    const lastIndex = lastReading(plotted[index]);
     return {
       year: entry.year,
       slot: entry.slot,
       isFocus: entry.year === focusEntry.year,
       days: entry.data.days,
       path: linePath(plotted[index]),
-      endX: r2(x(lastIndex)),
-      endY: r2(y(plotted[index][lastIndex])),
+      hasData: lastIndex >= 0,
+      endX: lastIndex >= 0 ? r2(x(lastIndex)) : 0,
+      endY: lastIndex >= 0 ? r2(y(plotted[index][lastIndex])) : 0,
     };
   });
 
@@ -217,9 +265,10 @@ export function renderSvg(model) {
 
   // Only the focus year is direct-labelled; the legend carries the rest, which
   // keeps five converging line-ends from colliding into noise.
-  const endMark =
-    `<circle class="end-dot" style="--series:var(--series-${focus.slot})" cx="${focus.endX}" cy="${focus.endY}" r="4"/>` +
-    `<text class="end-label" x="${focus.endX + 10}" y="${focus.endY + 4}">${focus.year}</text>`;
+  const endMark = focus.hasData
+    ? `<circle class="end-dot" style="--series:var(--series-${focus.slot})" cx="${focus.endX}" cy="${focus.endY}" r="4"/>` +
+      `<text class="end-label" x="${focus.endX + 10}" y="${focus.endY + 4}">${focus.year}</text>`
+    : '';
 
   const dots = model.series
     .map((entry) => `<circle r="4" cx="0" cy="0" style="--series:var(--series-${entry.slot})"/>`)

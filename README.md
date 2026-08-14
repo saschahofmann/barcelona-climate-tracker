@@ -65,6 +65,76 @@ Needs `ECMWF_API_KEY` in `.env`.
 pixi run fetch-era5
 ```
 
+## Station data: Barcelona - el Raval (XEMA X4)
+
+`src/barcelona_climate_tracker/xema_daily.py` downloads the nearest live weather
+station and writes it to `data/xema/` in the **same season-file shape** as ERA5, so the
+two can be compared day for day.
+
+```bash
+pixi run fetch-xema --full
+```
+
+```bash
+pixi run fetch-xema
+```
+
+The first is a bulk download of the whole record; the second is incremental — it reads
+the newest day already stored, re-fetches a 7-day trailing window (recent rows are
+unvalidated and get revised, and the newest day is usually partial), merges, and rewrites
+only the season files whose content actually changed. A run with nothing new touches no
+files, so it produces no git diff.
+
+Source is the [Socrata mirror](https://analisi.transparenciacatalunya.cat/Medi-Ambient/Dades-meteorol-giques-de-la-XEMA/nzvn-apee)
+of Meteocat's XEMA network — **no API key needed**. Set `SOCRATA_APP_TOKEN` to lift the
+anonymous rate limit if you have one.
+
+Things that bite, all learned the hard way:
+
+- **Don't filter `codi_estat` to `'V'`.** `V` is validated, `T` is suspect (~0.3%), and
+  *null* means not-yet-validated — which is every recent day. The script drops `T` and
+  keeps the rest. Filtering to `V` would silently discard the last months of data.
+- **Don't page with `$offset` + `$order=data_lectura`.** That column is unindexed and the
+  query times out. The script chunks by calendar month instead, which is also resumable.
+- **The reporting cadence changes mid-record.** X4 logged hourly (`codi_base` `HO`,
+  24/day) until partway through 2014 and half-hourly (`SH`, 48/day) since. The expected
+  sample count is derived per day from `codi_base` — a hardcoded 48 treats every
+  complete hourly day as half-missing and silently discards 2009–2013 entirely.
+- Days below 75% of **their own** cadence have their **averages and extremes** withheld
+  — a mean over a handful of night-time samples is a biased estimate of the day.
+- **Precipitation is deliberately not gated that way.** It is an accumulation of
+  intervals that really happened, so a short day is a *lower bound on observed rain*,
+  not a biased estimate. Withholding it is strictly worse: a cumulative total treats a
+  missing day as zero either way, so nulling only discards rain that was genuinely
+  measured. Partial rain days are kept and the fetch prints how many there were.
+- A day is dropped only when **every** series is missing. Keying that on temperature
+  would throw away good rain data whenever the temperature sensor alone dropped out.
+- The station metadata claims a 2006 start, but the open-data mirror only carries X4
+  **from 2009**.
+
+Because X4 records true sub-hourly extremes (variables `40`/`42`), its daily max/min are
+real extremes rather than the min/max of spot readings — unlike the ERA5 pipeline, which
+can only sample hourly.
+
+### ERA5 vs the station, measured
+
+Over 6411 overlapping days (2009-01-01 → 2026-08-02):
+
+| series | XEMA X4 | ERA5 | bias | MAE | corr |
+|---|---|---|---|---|---|
+| tasmin | 15.4 | 12.8 | **+2.63** | 2.68 | 0.976 |
+| tasmean | 18.2 | 16.2 | **+2.08** | 2.08 | 0.992 |
+| tasmax | 21.7 | 19.7 | **+1.95** | 1.99 | 0.982 |
+| precipitation | 579 | 628 | −49 mm/yr | | |
+
+ERA5 runs about **2 °C cold** against a city-centre station, and MAE ≈ |bias| means it is
+almost never warmer — a near-constant offset rather than noise. Correlations of
+0.976–0.992 say the day-to-day signal tracks closely.
+
+So ERA5 is sound for the *relative* comparison the chart does (year against year) but
+reads low in absolute terms. The gap is widest at night (`tasmin`, +2.63), which is what
+an urban heat island against a grid cell averaging coastline and sea should look like.
+
 ## Stack
 
 | Piece | Choice | Why |
