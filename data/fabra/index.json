@@ -1,0 +1,3650 @@
+{
+  "location": {
+    "name": "Barcelona - Observatori Fabra",
+    "station": "D5",
+    "latitude": 41.41864,
+    "longitude": 2.12379,
+    "altitude": 410
+  },
+  "source": "Fabra composite: GHCN-Daily 1913\u20131949, Meteocat CADTEP 1950\u20132008, XEMA D5 2009\u2013",
+  "variables": [
+    "tasmin",
+    "tasmean",
+    "tasmax",
+    "hursmin",
+    "hursmean",
+    "hursmax",
+    "prsum"
+  ],
+  "units": {
+    "tas": "degC",
+    "hurs": "%",
+    "pr": "mm"
+  },
+  "seasons": [
+    {
+      "file": "1913-JJA.json",
+      "season_year": 1913,
+      "season": "JJA",
+      "start_date": "1913-08-06",
+      "days": 26,
+      "complete": false
+    },
+    {
+      "file": "1913-SON.json",
+      "season_year": 1913,
+      "season": "SON",
+      "start_date": "1913-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1914-DJF.json",
+      "season_year": 1914,
+      "season": "DJF",
+      "start_date": "1913-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1914-MAM.json",
+      "season_year": 1914,
+      "season": "MAM",
+      "start_date": "1914-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1914-JJA.json",
+      "season_year": 1914,
+      "season": "JJA",
+      "start_date": "1914-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1914-SON.json",
+      "season_year": 1914,
+      "season": "SON",
+      "start_date": "1914-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1915-DJF.json",
+      "season_year": 1915,
+      "season": "DJF",
+      "start_date": "1914-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1915-MAM.json",
+      "season_year": 1915,
+      "season": "MAM",
+      "start_date": "1915-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1915-JJA.json",
+      "season_year": 1915,
+      "season": "JJA",
+      "start_date": "1915-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1915-SON.json",
+      "season_year": 1915,
+      "season": "SON",
+      "start_date": "1915-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1916-DJF.json",
+      "season_year": 1916,
+      "season": "DJF",
+      "start_date": "1915-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1916-MAM.json",
+      "season_year": 1916,
+      "season": "MAM",
+      "start_date": "1916-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1916-JJA.json",
+      "season_year": 1916,
+      "season": "JJA",
+      "start_date": "1916-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1916-SON.json",
+      "season_year": 1916,
+      "season": "SON",
+      "start_date": "1916-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1917-DJF.json",
+      "season_year": 1917,
+      "season": "DJF",
+      "start_date": "1916-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1917-MAM.json",
+      "season_year": 1917,
+      "season": "MAM",
+      "start_date": "1917-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1917-JJA.json",
+      "season_year": 1917,
+      "season": "JJA",
+      "start_date": "1917-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1917-SON.json",
+      "season_year": 1917,
+      "season": "SON",
+      "start_date": "1917-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1918-DJF.json",
+      "season_year": 1918,
+      "season": "DJF",
+      "start_date": "1917-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1918-MAM.json",
+      "season_year": 1918,
+      "season": "MAM",
+      "start_date": "1918-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1918-JJA.json",
+      "season_year": 1918,
+      "season": "JJA",
+      "start_date": "1918-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1918-SON.json",
+      "season_year": 1918,
+      "season": "SON",
+      "start_date": "1918-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1919-DJF.json",
+      "season_year": 1919,
+      "season": "DJF",
+      "start_date": "1918-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1919-MAM.json",
+      "season_year": 1919,
+      "season": "MAM",
+      "start_date": "1919-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1919-JJA.json",
+      "season_year": 1919,
+      "season": "JJA",
+      "start_date": "1919-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1919-SON.json",
+      "season_year": 1919,
+      "season": "SON",
+      "start_date": "1919-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1920-DJF.json",
+      "season_year": 1920,
+      "season": "DJF",
+      "start_date": "1919-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1920-MAM.json",
+      "season_year": 1920,
+      "season": "MAM",
+      "start_date": "1920-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1920-JJA.json",
+      "season_year": 1920,
+      "season": "JJA",
+      "start_date": "1920-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1920-SON.json",
+      "season_year": 1920,
+      "season": "SON",
+      "start_date": "1920-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1921-DJF.json",
+      "season_year": 1921,
+      "season": "DJF",
+      "start_date": "1920-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1921-MAM.json",
+      "season_year": 1921,
+      "season": "MAM",
+      "start_date": "1921-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1921-JJA.json",
+      "season_year": 1921,
+      "season": "JJA",
+      "start_date": "1921-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1921-SON.json",
+      "season_year": 1921,
+      "season": "SON",
+      "start_date": "1921-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1922-DJF.json",
+      "season_year": 1922,
+      "season": "DJF",
+      "start_date": "1921-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1922-MAM.json",
+      "season_year": 1922,
+      "season": "MAM",
+      "start_date": "1922-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1922-JJA.json",
+      "season_year": 1922,
+      "season": "JJA",
+      "start_date": "1922-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1922-SON.json",
+      "season_year": 1922,
+      "season": "SON",
+      "start_date": "1922-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1923-DJF.json",
+      "season_year": 1923,
+      "season": "DJF",
+      "start_date": "1922-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1923-MAM.json",
+      "season_year": 1923,
+      "season": "MAM",
+      "start_date": "1923-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1923-JJA.json",
+      "season_year": 1923,
+      "season": "JJA",
+      "start_date": "1923-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1923-SON.json",
+      "season_year": 1923,
+      "season": "SON",
+      "start_date": "1923-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1924-DJF.json",
+      "season_year": 1924,
+      "season": "DJF",
+      "start_date": "1923-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1924-MAM.json",
+      "season_year": 1924,
+      "season": "MAM",
+      "start_date": "1924-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1924-JJA.json",
+      "season_year": 1924,
+      "season": "JJA",
+      "start_date": "1924-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1924-SON.json",
+      "season_year": 1924,
+      "season": "SON",
+      "start_date": "1924-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1925-DJF.json",
+      "season_year": 1925,
+      "season": "DJF",
+      "start_date": "1924-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1925-MAM.json",
+      "season_year": 1925,
+      "season": "MAM",
+      "start_date": "1925-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1925-JJA.json",
+      "season_year": 1925,
+      "season": "JJA",
+      "start_date": "1925-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1925-SON.json",
+      "season_year": 1925,
+      "season": "SON",
+      "start_date": "1925-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1926-DJF.json",
+      "season_year": 1926,
+      "season": "DJF",
+      "start_date": "1925-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1926-MAM.json",
+      "season_year": 1926,
+      "season": "MAM",
+      "start_date": "1926-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1926-JJA.json",
+      "season_year": 1926,
+      "season": "JJA",
+      "start_date": "1926-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1926-SON.json",
+      "season_year": 1926,
+      "season": "SON",
+      "start_date": "1926-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1927-DJF.json",
+      "season_year": 1927,
+      "season": "DJF",
+      "start_date": "1926-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1927-MAM.json",
+      "season_year": 1927,
+      "season": "MAM",
+      "start_date": "1927-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1927-JJA.json",
+      "season_year": 1927,
+      "season": "JJA",
+      "start_date": "1927-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1927-SON.json",
+      "season_year": 1927,
+      "season": "SON",
+      "start_date": "1927-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1928-DJF.json",
+      "season_year": 1928,
+      "season": "DJF",
+      "start_date": "1927-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1928-MAM.json",
+      "season_year": 1928,
+      "season": "MAM",
+      "start_date": "1928-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1928-JJA.json",
+      "season_year": 1928,
+      "season": "JJA",
+      "start_date": "1928-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1928-SON.json",
+      "season_year": 1928,
+      "season": "SON",
+      "start_date": "1928-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1929-DJF.json",
+      "season_year": 1929,
+      "season": "DJF",
+      "start_date": "1928-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1929-MAM.json",
+      "season_year": 1929,
+      "season": "MAM",
+      "start_date": "1929-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1929-JJA.json",
+      "season_year": 1929,
+      "season": "JJA",
+      "start_date": "1929-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1929-SON.json",
+      "season_year": 1929,
+      "season": "SON",
+      "start_date": "1929-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1930-DJF.json",
+      "season_year": 1930,
+      "season": "DJF",
+      "start_date": "1929-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1930-MAM.json",
+      "season_year": 1930,
+      "season": "MAM",
+      "start_date": "1930-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1930-JJA.json",
+      "season_year": 1930,
+      "season": "JJA",
+      "start_date": "1930-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1930-SON.json",
+      "season_year": 1930,
+      "season": "SON",
+      "start_date": "1930-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1931-DJF.json",
+      "season_year": 1931,
+      "season": "DJF",
+      "start_date": "1930-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1931-MAM.json",
+      "season_year": 1931,
+      "season": "MAM",
+      "start_date": "1931-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1931-JJA.json",
+      "season_year": 1931,
+      "season": "JJA",
+      "start_date": "1931-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1931-SON.json",
+      "season_year": 1931,
+      "season": "SON",
+      "start_date": "1931-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1932-DJF.json",
+      "season_year": 1932,
+      "season": "DJF",
+      "start_date": "1931-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1932-MAM.json",
+      "season_year": 1932,
+      "season": "MAM",
+      "start_date": "1932-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1932-JJA.json",
+      "season_year": 1932,
+      "season": "JJA",
+      "start_date": "1932-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1932-SON.json",
+      "season_year": 1932,
+      "season": "SON",
+      "start_date": "1932-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1933-DJF.json",
+      "season_year": 1933,
+      "season": "DJF",
+      "start_date": "1932-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1933-MAM.json",
+      "season_year": 1933,
+      "season": "MAM",
+      "start_date": "1933-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1933-JJA.json",
+      "season_year": 1933,
+      "season": "JJA",
+      "start_date": "1933-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1933-SON.json",
+      "season_year": 1933,
+      "season": "SON",
+      "start_date": "1933-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1934-DJF.json",
+      "season_year": 1934,
+      "season": "DJF",
+      "start_date": "1933-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1934-MAM.json",
+      "season_year": 1934,
+      "season": "MAM",
+      "start_date": "1934-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1934-JJA.json",
+      "season_year": 1934,
+      "season": "JJA",
+      "start_date": "1934-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1934-SON.json",
+      "season_year": 1934,
+      "season": "SON",
+      "start_date": "1934-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1935-DJF.json",
+      "season_year": 1935,
+      "season": "DJF",
+      "start_date": "1934-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1935-MAM.json",
+      "season_year": 1935,
+      "season": "MAM",
+      "start_date": "1935-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1935-JJA.json",
+      "season_year": 1935,
+      "season": "JJA",
+      "start_date": "1935-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1935-SON.json",
+      "season_year": 1935,
+      "season": "SON",
+      "start_date": "1935-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1936-DJF.json",
+      "season_year": 1936,
+      "season": "DJF",
+      "start_date": "1935-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1936-MAM.json",
+      "season_year": 1936,
+      "season": "MAM",
+      "start_date": "1936-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1936-JJA.json",
+      "season_year": 1936,
+      "season": "JJA",
+      "start_date": "1936-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1936-SON.json",
+      "season_year": 1936,
+      "season": "SON",
+      "start_date": "1936-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1937-DJF.json",
+      "season_year": 1937,
+      "season": "DJF",
+      "start_date": "1936-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1937-MAM.json",
+      "season_year": 1937,
+      "season": "MAM",
+      "start_date": "1937-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1937-JJA.json",
+      "season_year": 1937,
+      "season": "JJA",
+      "start_date": "1937-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1937-SON.json",
+      "season_year": 1937,
+      "season": "SON",
+      "start_date": "1937-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1938-DJF.json",
+      "season_year": 1938,
+      "season": "DJF",
+      "start_date": "1937-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1938-MAM.json",
+      "season_year": 1938,
+      "season": "MAM",
+      "start_date": "1938-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1938-JJA.json",
+      "season_year": 1938,
+      "season": "JJA",
+      "start_date": "1938-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1938-SON.json",
+      "season_year": 1938,
+      "season": "SON",
+      "start_date": "1938-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1939-DJF.json",
+      "season_year": 1939,
+      "season": "DJF",
+      "start_date": "1938-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1939-MAM.json",
+      "season_year": 1939,
+      "season": "MAM",
+      "start_date": "1939-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1939-JJA.json",
+      "season_year": 1939,
+      "season": "JJA",
+      "start_date": "1939-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1939-SON.json",
+      "season_year": 1939,
+      "season": "SON",
+      "start_date": "1939-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1940-DJF.json",
+      "season_year": 1940,
+      "season": "DJF",
+      "start_date": "1939-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1940-MAM.json",
+      "season_year": 1940,
+      "season": "MAM",
+      "start_date": "1940-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1940-JJA.json",
+      "season_year": 1940,
+      "season": "JJA",
+      "start_date": "1940-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1940-SON.json",
+      "season_year": 1940,
+      "season": "SON",
+      "start_date": "1940-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1941-DJF.json",
+      "season_year": 1941,
+      "season": "DJF",
+      "start_date": "1940-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1941-MAM.json",
+      "season_year": 1941,
+      "season": "MAM",
+      "start_date": "1941-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1941-JJA.json",
+      "season_year": 1941,
+      "season": "JJA",
+      "start_date": "1941-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1941-SON.json",
+      "season_year": 1941,
+      "season": "SON",
+      "start_date": "1941-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1942-DJF.json",
+      "season_year": 1942,
+      "season": "DJF",
+      "start_date": "1941-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1942-MAM.json",
+      "season_year": 1942,
+      "season": "MAM",
+      "start_date": "1942-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1942-JJA.json",
+      "season_year": 1942,
+      "season": "JJA",
+      "start_date": "1942-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1942-SON.json",
+      "season_year": 1942,
+      "season": "SON",
+      "start_date": "1942-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1943-DJF.json",
+      "season_year": 1943,
+      "season": "DJF",
+      "start_date": "1942-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1943-MAM.json",
+      "season_year": 1943,
+      "season": "MAM",
+      "start_date": "1943-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1943-JJA.json",
+      "season_year": 1943,
+      "season": "JJA",
+      "start_date": "1943-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1943-SON.json",
+      "season_year": 1943,
+      "season": "SON",
+      "start_date": "1943-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1944-DJF.json",
+      "season_year": 1944,
+      "season": "DJF",
+      "start_date": "1943-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1944-MAM.json",
+      "season_year": 1944,
+      "season": "MAM",
+      "start_date": "1944-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1944-JJA.json",
+      "season_year": 1944,
+      "season": "JJA",
+      "start_date": "1944-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1944-SON.json",
+      "season_year": 1944,
+      "season": "SON",
+      "start_date": "1944-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1945-DJF.json",
+      "season_year": 1945,
+      "season": "DJF",
+      "start_date": "1944-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1945-MAM.json",
+      "season_year": 1945,
+      "season": "MAM",
+      "start_date": "1945-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1945-JJA.json",
+      "season_year": 1945,
+      "season": "JJA",
+      "start_date": "1945-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1945-SON.json",
+      "season_year": 1945,
+      "season": "SON",
+      "start_date": "1945-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1946-DJF.json",
+      "season_year": 1946,
+      "season": "DJF",
+      "start_date": "1945-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1946-MAM.json",
+      "season_year": 1946,
+      "season": "MAM",
+      "start_date": "1946-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1946-JJA.json",
+      "season_year": 1946,
+      "season": "JJA",
+      "start_date": "1946-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1946-SON.json",
+      "season_year": 1946,
+      "season": "SON",
+      "start_date": "1946-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1947-DJF.json",
+      "season_year": 1947,
+      "season": "DJF",
+      "start_date": "1946-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1947-MAM.json",
+      "season_year": 1947,
+      "season": "MAM",
+      "start_date": "1947-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1947-JJA.json",
+      "season_year": 1947,
+      "season": "JJA",
+      "start_date": "1947-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1947-SON.json",
+      "season_year": 1947,
+      "season": "SON",
+      "start_date": "1947-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1948-DJF.json",
+      "season_year": 1948,
+      "season": "DJF",
+      "start_date": "1947-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1948-MAM.json",
+      "season_year": 1948,
+      "season": "MAM",
+      "start_date": "1948-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1948-JJA.json",
+      "season_year": 1948,
+      "season": "JJA",
+      "start_date": "1948-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1948-SON.json",
+      "season_year": 1948,
+      "season": "SON",
+      "start_date": "1948-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1949-DJF.json",
+      "season_year": 1949,
+      "season": "DJF",
+      "start_date": "1948-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1949-MAM.json",
+      "season_year": 1949,
+      "season": "MAM",
+      "start_date": "1949-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1949-JJA.json",
+      "season_year": 1949,
+      "season": "JJA",
+      "start_date": "1949-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1949-SON.json",
+      "season_year": 1949,
+      "season": "SON",
+      "start_date": "1949-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1950-DJF.json",
+      "season_year": 1950,
+      "season": "DJF",
+      "start_date": "1949-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1950-MAM.json",
+      "season_year": 1950,
+      "season": "MAM",
+      "start_date": "1950-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1950-JJA.json",
+      "season_year": 1950,
+      "season": "JJA",
+      "start_date": "1950-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1950-SON.json",
+      "season_year": 1950,
+      "season": "SON",
+      "start_date": "1950-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1951-DJF.json",
+      "season_year": 1951,
+      "season": "DJF",
+      "start_date": "1950-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1951-MAM.json",
+      "season_year": 1951,
+      "season": "MAM",
+      "start_date": "1951-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1951-JJA.json",
+      "season_year": 1951,
+      "season": "JJA",
+      "start_date": "1951-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1951-SON.json",
+      "season_year": 1951,
+      "season": "SON",
+      "start_date": "1951-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1952-DJF.json",
+      "season_year": 1952,
+      "season": "DJF",
+      "start_date": "1951-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1952-MAM.json",
+      "season_year": 1952,
+      "season": "MAM",
+      "start_date": "1952-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1952-JJA.json",
+      "season_year": 1952,
+      "season": "JJA",
+      "start_date": "1952-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1952-SON.json",
+      "season_year": 1952,
+      "season": "SON",
+      "start_date": "1952-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1953-DJF.json",
+      "season_year": 1953,
+      "season": "DJF",
+      "start_date": "1952-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1953-MAM.json",
+      "season_year": 1953,
+      "season": "MAM",
+      "start_date": "1953-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1953-JJA.json",
+      "season_year": 1953,
+      "season": "JJA",
+      "start_date": "1953-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1953-SON.json",
+      "season_year": 1953,
+      "season": "SON",
+      "start_date": "1953-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1954-DJF.json",
+      "season_year": 1954,
+      "season": "DJF",
+      "start_date": "1953-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1954-MAM.json",
+      "season_year": 1954,
+      "season": "MAM",
+      "start_date": "1954-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1954-JJA.json",
+      "season_year": 1954,
+      "season": "JJA",
+      "start_date": "1954-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1954-SON.json",
+      "season_year": 1954,
+      "season": "SON",
+      "start_date": "1954-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1955-DJF.json",
+      "season_year": 1955,
+      "season": "DJF",
+      "start_date": "1954-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1955-MAM.json",
+      "season_year": 1955,
+      "season": "MAM",
+      "start_date": "1955-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1955-JJA.json",
+      "season_year": 1955,
+      "season": "JJA",
+      "start_date": "1955-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1955-SON.json",
+      "season_year": 1955,
+      "season": "SON",
+      "start_date": "1955-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1956-DJF.json",
+      "season_year": 1956,
+      "season": "DJF",
+      "start_date": "1955-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1956-MAM.json",
+      "season_year": 1956,
+      "season": "MAM",
+      "start_date": "1956-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1956-JJA.json",
+      "season_year": 1956,
+      "season": "JJA",
+      "start_date": "1956-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1956-SON.json",
+      "season_year": 1956,
+      "season": "SON",
+      "start_date": "1956-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1957-DJF.json",
+      "season_year": 1957,
+      "season": "DJF",
+      "start_date": "1956-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1957-MAM.json",
+      "season_year": 1957,
+      "season": "MAM",
+      "start_date": "1957-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1957-JJA.json",
+      "season_year": 1957,
+      "season": "JJA",
+      "start_date": "1957-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1957-SON.json",
+      "season_year": 1957,
+      "season": "SON",
+      "start_date": "1957-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1958-DJF.json",
+      "season_year": 1958,
+      "season": "DJF",
+      "start_date": "1957-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1958-MAM.json",
+      "season_year": 1958,
+      "season": "MAM",
+      "start_date": "1958-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1958-JJA.json",
+      "season_year": 1958,
+      "season": "JJA",
+      "start_date": "1958-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1958-SON.json",
+      "season_year": 1958,
+      "season": "SON",
+      "start_date": "1958-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1959-DJF.json",
+      "season_year": 1959,
+      "season": "DJF",
+      "start_date": "1958-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1959-MAM.json",
+      "season_year": 1959,
+      "season": "MAM",
+      "start_date": "1959-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1959-JJA.json",
+      "season_year": 1959,
+      "season": "JJA",
+      "start_date": "1959-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1959-SON.json",
+      "season_year": 1959,
+      "season": "SON",
+      "start_date": "1959-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1960-DJF.json",
+      "season_year": 1960,
+      "season": "DJF",
+      "start_date": "1959-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1960-MAM.json",
+      "season_year": 1960,
+      "season": "MAM",
+      "start_date": "1960-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1960-JJA.json",
+      "season_year": 1960,
+      "season": "JJA",
+      "start_date": "1960-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1960-SON.json",
+      "season_year": 1960,
+      "season": "SON",
+      "start_date": "1960-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1961-DJF.json",
+      "season_year": 1961,
+      "season": "DJF",
+      "start_date": "1960-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1961-MAM.json",
+      "season_year": 1961,
+      "season": "MAM",
+      "start_date": "1961-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1961-JJA.json",
+      "season_year": 1961,
+      "season": "JJA",
+      "start_date": "1961-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1961-SON.json",
+      "season_year": 1961,
+      "season": "SON",
+      "start_date": "1961-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1962-DJF.json",
+      "season_year": 1962,
+      "season": "DJF",
+      "start_date": "1961-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1962-MAM.json",
+      "season_year": 1962,
+      "season": "MAM",
+      "start_date": "1962-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1962-JJA.json",
+      "season_year": 1962,
+      "season": "JJA",
+      "start_date": "1962-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1962-SON.json",
+      "season_year": 1962,
+      "season": "SON",
+      "start_date": "1962-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1963-DJF.json",
+      "season_year": 1963,
+      "season": "DJF",
+      "start_date": "1962-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1963-MAM.json",
+      "season_year": 1963,
+      "season": "MAM",
+      "start_date": "1963-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1963-JJA.json",
+      "season_year": 1963,
+      "season": "JJA",
+      "start_date": "1963-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1963-SON.json",
+      "season_year": 1963,
+      "season": "SON",
+      "start_date": "1963-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1964-DJF.json",
+      "season_year": 1964,
+      "season": "DJF",
+      "start_date": "1963-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1964-MAM.json",
+      "season_year": 1964,
+      "season": "MAM",
+      "start_date": "1964-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1964-JJA.json",
+      "season_year": 1964,
+      "season": "JJA",
+      "start_date": "1964-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1964-SON.json",
+      "season_year": 1964,
+      "season": "SON",
+      "start_date": "1964-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1965-DJF.json",
+      "season_year": 1965,
+      "season": "DJF",
+      "start_date": "1964-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1965-MAM.json",
+      "season_year": 1965,
+      "season": "MAM",
+      "start_date": "1965-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1965-JJA.json",
+      "season_year": 1965,
+      "season": "JJA",
+      "start_date": "1965-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1965-SON.json",
+      "season_year": 1965,
+      "season": "SON",
+      "start_date": "1965-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1966-DJF.json",
+      "season_year": 1966,
+      "season": "DJF",
+      "start_date": "1965-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1966-MAM.json",
+      "season_year": 1966,
+      "season": "MAM",
+      "start_date": "1966-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1966-JJA.json",
+      "season_year": 1966,
+      "season": "JJA",
+      "start_date": "1966-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1966-SON.json",
+      "season_year": 1966,
+      "season": "SON",
+      "start_date": "1966-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1967-DJF.json",
+      "season_year": 1967,
+      "season": "DJF",
+      "start_date": "1966-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1967-MAM.json",
+      "season_year": 1967,
+      "season": "MAM",
+      "start_date": "1967-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1967-JJA.json",
+      "season_year": 1967,
+      "season": "JJA",
+      "start_date": "1967-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1967-SON.json",
+      "season_year": 1967,
+      "season": "SON",
+      "start_date": "1967-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1968-DJF.json",
+      "season_year": 1968,
+      "season": "DJF",
+      "start_date": "1967-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1968-MAM.json",
+      "season_year": 1968,
+      "season": "MAM",
+      "start_date": "1968-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1968-JJA.json",
+      "season_year": 1968,
+      "season": "JJA",
+      "start_date": "1968-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1968-SON.json",
+      "season_year": 1968,
+      "season": "SON",
+      "start_date": "1968-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1969-DJF.json",
+      "season_year": 1969,
+      "season": "DJF",
+      "start_date": "1968-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1969-MAM.json",
+      "season_year": 1969,
+      "season": "MAM",
+      "start_date": "1969-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1969-JJA.json",
+      "season_year": 1969,
+      "season": "JJA",
+      "start_date": "1969-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1969-SON.json",
+      "season_year": 1969,
+      "season": "SON",
+      "start_date": "1969-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1970-DJF.json",
+      "season_year": 1970,
+      "season": "DJF",
+      "start_date": "1969-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1970-MAM.json",
+      "season_year": 1970,
+      "season": "MAM",
+      "start_date": "1970-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1970-JJA.json",
+      "season_year": 1970,
+      "season": "JJA",
+      "start_date": "1970-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1970-SON.json",
+      "season_year": 1970,
+      "season": "SON",
+      "start_date": "1970-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1971-DJF.json",
+      "season_year": 1971,
+      "season": "DJF",
+      "start_date": "1970-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1971-MAM.json",
+      "season_year": 1971,
+      "season": "MAM",
+      "start_date": "1971-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1971-JJA.json",
+      "season_year": 1971,
+      "season": "JJA",
+      "start_date": "1971-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1971-SON.json",
+      "season_year": 1971,
+      "season": "SON",
+      "start_date": "1971-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1972-DJF.json",
+      "season_year": 1972,
+      "season": "DJF",
+      "start_date": "1971-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1972-MAM.json",
+      "season_year": 1972,
+      "season": "MAM",
+      "start_date": "1972-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1972-JJA.json",
+      "season_year": 1972,
+      "season": "JJA",
+      "start_date": "1972-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1972-SON.json",
+      "season_year": 1972,
+      "season": "SON",
+      "start_date": "1972-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1973-DJF.json",
+      "season_year": 1973,
+      "season": "DJF",
+      "start_date": "1972-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1973-MAM.json",
+      "season_year": 1973,
+      "season": "MAM",
+      "start_date": "1973-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1973-JJA.json",
+      "season_year": 1973,
+      "season": "JJA",
+      "start_date": "1973-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1973-SON.json",
+      "season_year": 1973,
+      "season": "SON",
+      "start_date": "1973-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1974-DJF.json",
+      "season_year": 1974,
+      "season": "DJF",
+      "start_date": "1973-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1974-MAM.json",
+      "season_year": 1974,
+      "season": "MAM",
+      "start_date": "1974-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1974-JJA.json",
+      "season_year": 1974,
+      "season": "JJA",
+      "start_date": "1974-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1974-SON.json",
+      "season_year": 1974,
+      "season": "SON",
+      "start_date": "1974-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1975-DJF.json",
+      "season_year": 1975,
+      "season": "DJF",
+      "start_date": "1974-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1975-MAM.json",
+      "season_year": 1975,
+      "season": "MAM",
+      "start_date": "1975-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1975-JJA.json",
+      "season_year": 1975,
+      "season": "JJA",
+      "start_date": "1975-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1975-SON.json",
+      "season_year": 1975,
+      "season": "SON",
+      "start_date": "1975-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1976-DJF.json",
+      "season_year": 1976,
+      "season": "DJF",
+      "start_date": "1975-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1976-MAM.json",
+      "season_year": 1976,
+      "season": "MAM",
+      "start_date": "1976-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1976-JJA.json",
+      "season_year": 1976,
+      "season": "JJA",
+      "start_date": "1976-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1976-SON.json",
+      "season_year": 1976,
+      "season": "SON",
+      "start_date": "1976-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1977-DJF.json",
+      "season_year": 1977,
+      "season": "DJF",
+      "start_date": "1976-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1977-MAM.json",
+      "season_year": 1977,
+      "season": "MAM",
+      "start_date": "1977-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1977-JJA.json",
+      "season_year": 1977,
+      "season": "JJA",
+      "start_date": "1977-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1977-SON.json",
+      "season_year": 1977,
+      "season": "SON",
+      "start_date": "1977-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1978-DJF.json",
+      "season_year": 1978,
+      "season": "DJF",
+      "start_date": "1977-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1978-MAM.json",
+      "season_year": 1978,
+      "season": "MAM",
+      "start_date": "1978-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1978-JJA.json",
+      "season_year": 1978,
+      "season": "JJA",
+      "start_date": "1978-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1978-SON.json",
+      "season_year": 1978,
+      "season": "SON",
+      "start_date": "1978-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1979-DJF.json",
+      "season_year": 1979,
+      "season": "DJF",
+      "start_date": "1978-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1979-MAM.json",
+      "season_year": 1979,
+      "season": "MAM",
+      "start_date": "1979-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1979-JJA.json",
+      "season_year": 1979,
+      "season": "JJA",
+      "start_date": "1979-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1979-SON.json",
+      "season_year": 1979,
+      "season": "SON",
+      "start_date": "1979-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1980-DJF.json",
+      "season_year": 1980,
+      "season": "DJF",
+      "start_date": "1979-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1980-MAM.json",
+      "season_year": 1980,
+      "season": "MAM",
+      "start_date": "1980-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1980-JJA.json",
+      "season_year": 1980,
+      "season": "JJA",
+      "start_date": "1980-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1980-SON.json",
+      "season_year": 1980,
+      "season": "SON",
+      "start_date": "1980-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1981-DJF.json",
+      "season_year": 1981,
+      "season": "DJF",
+      "start_date": "1980-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1981-MAM.json",
+      "season_year": 1981,
+      "season": "MAM",
+      "start_date": "1981-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1981-JJA.json",
+      "season_year": 1981,
+      "season": "JJA",
+      "start_date": "1981-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1981-SON.json",
+      "season_year": 1981,
+      "season": "SON",
+      "start_date": "1981-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1982-DJF.json",
+      "season_year": 1982,
+      "season": "DJF",
+      "start_date": "1981-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1982-MAM.json",
+      "season_year": 1982,
+      "season": "MAM",
+      "start_date": "1982-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1982-JJA.json",
+      "season_year": 1982,
+      "season": "JJA",
+      "start_date": "1982-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1982-SON.json",
+      "season_year": 1982,
+      "season": "SON",
+      "start_date": "1982-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1983-DJF.json",
+      "season_year": 1983,
+      "season": "DJF",
+      "start_date": "1982-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1983-MAM.json",
+      "season_year": 1983,
+      "season": "MAM",
+      "start_date": "1983-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1983-JJA.json",
+      "season_year": 1983,
+      "season": "JJA",
+      "start_date": "1983-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1983-SON.json",
+      "season_year": 1983,
+      "season": "SON",
+      "start_date": "1983-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1984-DJF.json",
+      "season_year": 1984,
+      "season": "DJF",
+      "start_date": "1983-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1984-MAM.json",
+      "season_year": 1984,
+      "season": "MAM",
+      "start_date": "1984-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1984-JJA.json",
+      "season_year": 1984,
+      "season": "JJA",
+      "start_date": "1984-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1984-SON.json",
+      "season_year": 1984,
+      "season": "SON",
+      "start_date": "1984-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1985-DJF.json",
+      "season_year": 1985,
+      "season": "DJF",
+      "start_date": "1984-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1985-MAM.json",
+      "season_year": 1985,
+      "season": "MAM",
+      "start_date": "1985-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1985-JJA.json",
+      "season_year": 1985,
+      "season": "JJA",
+      "start_date": "1985-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1985-SON.json",
+      "season_year": 1985,
+      "season": "SON",
+      "start_date": "1985-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1986-DJF.json",
+      "season_year": 1986,
+      "season": "DJF",
+      "start_date": "1985-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1986-MAM.json",
+      "season_year": 1986,
+      "season": "MAM",
+      "start_date": "1986-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1986-JJA.json",
+      "season_year": 1986,
+      "season": "JJA",
+      "start_date": "1986-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1986-SON.json",
+      "season_year": 1986,
+      "season": "SON",
+      "start_date": "1986-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1987-DJF.json",
+      "season_year": 1987,
+      "season": "DJF",
+      "start_date": "1986-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1987-MAM.json",
+      "season_year": 1987,
+      "season": "MAM",
+      "start_date": "1987-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1987-JJA.json",
+      "season_year": 1987,
+      "season": "JJA",
+      "start_date": "1987-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1987-SON.json",
+      "season_year": 1987,
+      "season": "SON",
+      "start_date": "1987-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1988-DJF.json",
+      "season_year": 1988,
+      "season": "DJF",
+      "start_date": "1987-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1988-MAM.json",
+      "season_year": 1988,
+      "season": "MAM",
+      "start_date": "1988-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1988-JJA.json",
+      "season_year": 1988,
+      "season": "JJA",
+      "start_date": "1988-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1988-SON.json",
+      "season_year": 1988,
+      "season": "SON",
+      "start_date": "1988-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1989-DJF.json",
+      "season_year": 1989,
+      "season": "DJF",
+      "start_date": "1988-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1989-MAM.json",
+      "season_year": 1989,
+      "season": "MAM",
+      "start_date": "1989-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1989-JJA.json",
+      "season_year": 1989,
+      "season": "JJA",
+      "start_date": "1989-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1989-SON.json",
+      "season_year": 1989,
+      "season": "SON",
+      "start_date": "1989-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1990-DJF.json",
+      "season_year": 1990,
+      "season": "DJF",
+      "start_date": "1989-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1990-MAM.json",
+      "season_year": 1990,
+      "season": "MAM",
+      "start_date": "1990-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1990-JJA.json",
+      "season_year": 1990,
+      "season": "JJA",
+      "start_date": "1990-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1990-SON.json",
+      "season_year": 1990,
+      "season": "SON",
+      "start_date": "1990-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1991-DJF.json",
+      "season_year": 1991,
+      "season": "DJF",
+      "start_date": "1990-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1991-MAM.json",
+      "season_year": 1991,
+      "season": "MAM",
+      "start_date": "1991-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1991-JJA.json",
+      "season_year": 1991,
+      "season": "JJA",
+      "start_date": "1991-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1991-SON.json",
+      "season_year": 1991,
+      "season": "SON",
+      "start_date": "1991-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1992-DJF.json",
+      "season_year": 1992,
+      "season": "DJF",
+      "start_date": "1991-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1992-MAM.json",
+      "season_year": 1992,
+      "season": "MAM",
+      "start_date": "1992-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1992-JJA.json",
+      "season_year": 1992,
+      "season": "JJA",
+      "start_date": "1992-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1992-SON.json",
+      "season_year": 1992,
+      "season": "SON",
+      "start_date": "1992-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1993-DJF.json",
+      "season_year": 1993,
+      "season": "DJF",
+      "start_date": "1992-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1993-MAM.json",
+      "season_year": 1993,
+      "season": "MAM",
+      "start_date": "1993-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1993-JJA.json",
+      "season_year": 1993,
+      "season": "JJA",
+      "start_date": "1993-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1993-SON.json",
+      "season_year": 1993,
+      "season": "SON",
+      "start_date": "1993-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1994-DJF.json",
+      "season_year": 1994,
+      "season": "DJF",
+      "start_date": "1993-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1994-MAM.json",
+      "season_year": 1994,
+      "season": "MAM",
+      "start_date": "1994-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1994-JJA.json",
+      "season_year": 1994,
+      "season": "JJA",
+      "start_date": "1994-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1994-SON.json",
+      "season_year": 1994,
+      "season": "SON",
+      "start_date": "1994-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1995-DJF.json",
+      "season_year": 1995,
+      "season": "DJF",
+      "start_date": "1994-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1995-MAM.json",
+      "season_year": 1995,
+      "season": "MAM",
+      "start_date": "1995-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1995-JJA.json",
+      "season_year": 1995,
+      "season": "JJA",
+      "start_date": "1995-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1995-SON.json",
+      "season_year": 1995,
+      "season": "SON",
+      "start_date": "1995-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1996-DJF.json",
+      "season_year": 1996,
+      "season": "DJF",
+      "start_date": "1995-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1996-MAM.json",
+      "season_year": 1996,
+      "season": "MAM",
+      "start_date": "1996-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1996-JJA.json",
+      "season_year": 1996,
+      "season": "JJA",
+      "start_date": "1996-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1996-SON.json",
+      "season_year": 1996,
+      "season": "SON",
+      "start_date": "1996-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1997-DJF.json",
+      "season_year": 1997,
+      "season": "DJF",
+      "start_date": "1996-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1997-MAM.json",
+      "season_year": 1997,
+      "season": "MAM",
+      "start_date": "1997-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1997-JJA.json",
+      "season_year": 1997,
+      "season": "JJA",
+      "start_date": "1997-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1997-SON.json",
+      "season_year": 1997,
+      "season": "SON",
+      "start_date": "1997-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1998-DJF.json",
+      "season_year": 1998,
+      "season": "DJF",
+      "start_date": "1997-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1998-MAM.json",
+      "season_year": 1998,
+      "season": "MAM",
+      "start_date": "1998-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1998-JJA.json",
+      "season_year": 1998,
+      "season": "JJA",
+      "start_date": "1998-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1998-SON.json",
+      "season_year": 1998,
+      "season": "SON",
+      "start_date": "1998-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "1999-DJF.json",
+      "season_year": 1999,
+      "season": "DJF",
+      "start_date": "1998-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "1999-MAM.json",
+      "season_year": 1999,
+      "season": "MAM",
+      "start_date": "1999-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1999-JJA.json",
+      "season_year": 1999,
+      "season": "JJA",
+      "start_date": "1999-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "1999-SON.json",
+      "season_year": 1999,
+      "season": "SON",
+      "start_date": "1999-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2000-DJF.json",
+      "season_year": 2000,
+      "season": "DJF",
+      "start_date": "1999-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2000-MAM.json",
+      "season_year": 2000,
+      "season": "MAM",
+      "start_date": "2000-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2000-JJA.json",
+      "season_year": 2000,
+      "season": "JJA",
+      "start_date": "2000-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2000-SON.json",
+      "season_year": 2000,
+      "season": "SON",
+      "start_date": "2000-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2001-DJF.json",
+      "season_year": 2001,
+      "season": "DJF",
+      "start_date": "2000-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2001-MAM.json",
+      "season_year": 2001,
+      "season": "MAM",
+      "start_date": "2001-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2001-JJA.json",
+      "season_year": 2001,
+      "season": "JJA",
+      "start_date": "2001-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2001-SON.json",
+      "season_year": 2001,
+      "season": "SON",
+      "start_date": "2001-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2002-DJF.json",
+      "season_year": 2002,
+      "season": "DJF",
+      "start_date": "2001-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2002-MAM.json",
+      "season_year": 2002,
+      "season": "MAM",
+      "start_date": "2002-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2002-JJA.json",
+      "season_year": 2002,
+      "season": "JJA",
+      "start_date": "2002-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2002-SON.json",
+      "season_year": 2002,
+      "season": "SON",
+      "start_date": "2002-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2003-DJF.json",
+      "season_year": 2003,
+      "season": "DJF",
+      "start_date": "2002-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2003-MAM.json",
+      "season_year": 2003,
+      "season": "MAM",
+      "start_date": "2003-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2003-JJA.json",
+      "season_year": 2003,
+      "season": "JJA",
+      "start_date": "2003-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2003-SON.json",
+      "season_year": 2003,
+      "season": "SON",
+      "start_date": "2003-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2004-DJF.json",
+      "season_year": 2004,
+      "season": "DJF",
+      "start_date": "2003-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2004-MAM.json",
+      "season_year": 2004,
+      "season": "MAM",
+      "start_date": "2004-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2004-JJA.json",
+      "season_year": 2004,
+      "season": "JJA",
+      "start_date": "2004-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2004-SON.json",
+      "season_year": 2004,
+      "season": "SON",
+      "start_date": "2004-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2005-DJF.json",
+      "season_year": 2005,
+      "season": "DJF",
+      "start_date": "2004-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2005-MAM.json",
+      "season_year": 2005,
+      "season": "MAM",
+      "start_date": "2005-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2005-JJA.json",
+      "season_year": 2005,
+      "season": "JJA",
+      "start_date": "2005-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2005-SON.json",
+      "season_year": 2005,
+      "season": "SON",
+      "start_date": "2005-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2006-DJF.json",
+      "season_year": 2006,
+      "season": "DJF",
+      "start_date": "2005-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2006-MAM.json",
+      "season_year": 2006,
+      "season": "MAM",
+      "start_date": "2006-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2006-JJA.json",
+      "season_year": 2006,
+      "season": "JJA",
+      "start_date": "2006-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2006-SON.json",
+      "season_year": 2006,
+      "season": "SON",
+      "start_date": "2006-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2007-DJF.json",
+      "season_year": 2007,
+      "season": "DJF",
+      "start_date": "2006-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2007-MAM.json",
+      "season_year": 2007,
+      "season": "MAM",
+      "start_date": "2007-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2007-JJA.json",
+      "season_year": 2007,
+      "season": "JJA",
+      "start_date": "2007-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2007-SON.json",
+      "season_year": 2007,
+      "season": "SON",
+      "start_date": "2007-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2008-DJF.json",
+      "season_year": 2008,
+      "season": "DJF",
+      "start_date": "2007-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2008-MAM.json",
+      "season_year": 2008,
+      "season": "MAM",
+      "start_date": "2008-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2008-JJA.json",
+      "season_year": 2008,
+      "season": "JJA",
+      "start_date": "2008-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2008-SON.json",
+      "season_year": 2008,
+      "season": "SON",
+      "start_date": "2008-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2009-DJF.json",
+      "season_year": 2009,
+      "season": "DJF",
+      "start_date": "2008-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2009-MAM.json",
+      "season_year": 2009,
+      "season": "MAM",
+      "start_date": "2009-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2009-JJA.json",
+      "season_year": 2009,
+      "season": "JJA",
+      "start_date": "2009-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2009-SON.json",
+      "season_year": 2009,
+      "season": "SON",
+      "start_date": "2009-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2010-DJF.json",
+      "season_year": 2010,
+      "season": "DJF",
+      "start_date": "2009-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2010-MAM.json",
+      "season_year": 2010,
+      "season": "MAM",
+      "start_date": "2010-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2010-JJA.json",
+      "season_year": 2010,
+      "season": "JJA",
+      "start_date": "2010-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2010-SON.json",
+      "season_year": 2010,
+      "season": "SON",
+      "start_date": "2010-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2011-DJF.json",
+      "season_year": 2011,
+      "season": "DJF",
+      "start_date": "2010-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2011-MAM.json",
+      "season_year": 2011,
+      "season": "MAM",
+      "start_date": "2011-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2011-JJA.json",
+      "season_year": 2011,
+      "season": "JJA",
+      "start_date": "2011-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2011-SON.json",
+      "season_year": 2011,
+      "season": "SON",
+      "start_date": "2011-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2012-DJF.json",
+      "season_year": 2012,
+      "season": "DJF",
+      "start_date": "2011-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2012-MAM.json",
+      "season_year": 2012,
+      "season": "MAM",
+      "start_date": "2012-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2012-JJA.json",
+      "season_year": 2012,
+      "season": "JJA",
+      "start_date": "2012-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2012-SON.json",
+      "season_year": 2012,
+      "season": "SON",
+      "start_date": "2012-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2013-DJF.json",
+      "season_year": 2013,
+      "season": "DJF",
+      "start_date": "2012-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2013-MAM.json",
+      "season_year": 2013,
+      "season": "MAM",
+      "start_date": "2013-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2013-JJA.json",
+      "season_year": 2013,
+      "season": "JJA",
+      "start_date": "2013-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2013-SON.json",
+      "season_year": 2013,
+      "season": "SON",
+      "start_date": "2013-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2014-DJF.json",
+      "season_year": 2014,
+      "season": "DJF",
+      "start_date": "2013-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2014-MAM.json",
+      "season_year": 2014,
+      "season": "MAM",
+      "start_date": "2014-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2014-JJA.json",
+      "season_year": 2014,
+      "season": "JJA",
+      "start_date": "2014-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2014-SON.json",
+      "season_year": 2014,
+      "season": "SON",
+      "start_date": "2014-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2015-DJF.json",
+      "season_year": 2015,
+      "season": "DJF",
+      "start_date": "2014-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2015-MAM.json",
+      "season_year": 2015,
+      "season": "MAM",
+      "start_date": "2015-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2015-JJA.json",
+      "season_year": 2015,
+      "season": "JJA",
+      "start_date": "2015-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2015-SON.json",
+      "season_year": 2015,
+      "season": "SON",
+      "start_date": "2015-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2016-DJF.json",
+      "season_year": 2016,
+      "season": "DJF",
+      "start_date": "2015-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2016-MAM.json",
+      "season_year": 2016,
+      "season": "MAM",
+      "start_date": "2016-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2016-JJA.json",
+      "season_year": 2016,
+      "season": "JJA",
+      "start_date": "2016-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2016-SON.json",
+      "season_year": 2016,
+      "season": "SON",
+      "start_date": "2016-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2017-DJF.json",
+      "season_year": 2017,
+      "season": "DJF",
+      "start_date": "2016-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2017-MAM.json",
+      "season_year": 2017,
+      "season": "MAM",
+      "start_date": "2017-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2017-JJA.json",
+      "season_year": 2017,
+      "season": "JJA",
+      "start_date": "2017-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2017-SON.json",
+      "season_year": 2017,
+      "season": "SON",
+      "start_date": "2017-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2018-DJF.json",
+      "season_year": 2018,
+      "season": "DJF",
+      "start_date": "2017-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2018-MAM.json",
+      "season_year": 2018,
+      "season": "MAM",
+      "start_date": "2018-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2018-JJA.json",
+      "season_year": 2018,
+      "season": "JJA",
+      "start_date": "2018-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2018-SON.json",
+      "season_year": 2018,
+      "season": "SON",
+      "start_date": "2018-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2019-DJF.json",
+      "season_year": 2019,
+      "season": "DJF",
+      "start_date": "2018-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2019-MAM.json",
+      "season_year": 2019,
+      "season": "MAM",
+      "start_date": "2019-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2019-JJA.json",
+      "season_year": 2019,
+      "season": "JJA",
+      "start_date": "2019-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2019-SON.json",
+      "season_year": 2019,
+      "season": "SON",
+      "start_date": "2019-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2020-DJF.json",
+      "season_year": 2020,
+      "season": "DJF",
+      "start_date": "2019-12-01",
+      "days": 89,
+      "complete": false
+    },
+    {
+      "file": "2020-MAM.json",
+      "season_year": 2020,
+      "season": "MAM",
+      "start_date": "2020-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2020-JJA.json",
+      "season_year": 2020,
+      "season": "JJA",
+      "start_date": "2020-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2020-SON.json",
+      "season_year": 2020,
+      "season": "SON",
+      "start_date": "2020-09-01",
+      "days": 90,
+      "complete": false
+    },
+    {
+      "file": "2021-DJF.json",
+      "season_year": 2021,
+      "season": "DJF",
+      "start_date": "2020-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2021-MAM.json",
+      "season_year": 2021,
+      "season": "MAM",
+      "start_date": "2021-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2021-JJA.json",
+      "season_year": 2021,
+      "season": "JJA",
+      "start_date": "2021-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2021-SON.json",
+      "season_year": 2021,
+      "season": "SON",
+      "start_date": "2021-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2022-DJF.json",
+      "season_year": 2022,
+      "season": "DJF",
+      "start_date": "2021-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2022-MAM.json",
+      "season_year": 2022,
+      "season": "MAM",
+      "start_date": "2022-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2022-JJA.json",
+      "season_year": 2022,
+      "season": "JJA",
+      "start_date": "2022-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2022-SON.json",
+      "season_year": 2022,
+      "season": "SON",
+      "start_date": "2022-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2023-DJF.json",
+      "season_year": 2023,
+      "season": "DJF",
+      "start_date": "2022-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2023-MAM.json",
+      "season_year": 2023,
+      "season": "MAM",
+      "start_date": "2023-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2023-JJA.json",
+      "season_year": 2023,
+      "season": "JJA",
+      "start_date": "2023-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2023-SON.json",
+      "season_year": 2023,
+      "season": "SON",
+      "start_date": "2023-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2024-DJF.json",
+      "season_year": 2024,
+      "season": "DJF",
+      "start_date": "2023-12-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2024-MAM.json",
+      "season_year": 2024,
+      "season": "MAM",
+      "start_date": "2024-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2024-JJA.json",
+      "season_year": 2024,
+      "season": "JJA",
+      "start_date": "2024-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2024-SON.json",
+      "season_year": 2024,
+      "season": "SON",
+      "start_date": "2024-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2025-DJF.json",
+      "season_year": 2025,
+      "season": "DJF",
+      "start_date": "2024-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2025-MAM.json",
+      "season_year": 2025,
+      "season": "MAM",
+      "start_date": "2025-03-01",
+      "days": 91,
+      "complete": false
+    },
+    {
+      "file": "2025-JJA.json",
+      "season_year": 2025,
+      "season": "JJA",
+      "start_date": "2025-06-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2025-SON.json",
+      "season_year": 2025,
+      "season": "SON",
+      "start_date": "2025-09-01",
+      "days": 91,
+      "complete": true
+    },
+    {
+      "file": "2026-DJF.json",
+      "season_year": 2026,
+      "season": "DJF",
+      "start_date": "2025-12-01",
+      "days": 90,
+      "complete": true
+    },
+    {
+      "file": "2026-MAM.json",
+      "season_year": 2026,
+      "season": "MAM",
+      "start_date": "2026-03-01",
+      "days": 92,
+      "complete": true
+    },
+    {
+      "file": "2026-JJA.json",
+      "season_year": 2026,
+      "season": "JJA",
+      "start_date": "2026-06-01",
+      "days": 78,
+      "complete": false
+    }
+  ]
+}
