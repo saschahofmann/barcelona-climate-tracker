@@ -1,9 +1,10 @@
-"""Download Barcelona - el Raval (XEMA station X4) and write daily season files.
+"""Download Meteocat XEMA stations and write daily season files.
 
-Runs two ways:
+Runs two ways, over every configured station unless one is named:
 
-    python -m barcelona_climate_tracker.xema_daily            # incremental
-    python -m barcelona_climate_tracker.xema_daily --full     # bulk, from 2009
+    python -m barcelona_climate_tracker.xema_daily                 # incremental
+    python -m barcelona_climate_tracker.xema_daily --full          # bulk, from 2009
+    python -m barcelona_climate_tracker.xema_daily --station D5    # just Fabra
 
 Incremental picks up from the newest day already stored, re-fetching a short
 trailing window so the last partial day is corrected once it fills in.
@@ -33,17 +34,33 @@ from barcelona_climate_tracker.seasons import (
 
 load_dotenv()
 
-STATION = "X4"
-STATION_NAME = "Barcelona - el Raval"
-# From the XEMA station metadata (yqwd-vj5e).
-STATION_LAT = 41.3839
-STATION_LON = 2.1679
-STATION_ALTITUDE = 33
+# Coordinates and altitudes from the XEMA station metadata (yqwd-vj5e).
+STATIONS = {
+    "D5": {
+        "name": "Barcelona - Observatori Fabra",
+        "latitude": 41.41864,
+        "longitude": 2.12379,
+        "altitude": 410,
+    },
+    "X4": {
+        "name": "Barcelona - el Raval",
+        "latitude": 41.3839,
+        "longitude": 2.1679,
+        "altitude": 33,
+    },
+}
 
 DATASET = "https://analisi.transparenciacatalunya.cat/resource/nzvn-apee.json"
 
-# The station metadata claims 2006, but the open-data mirror only carries X4
-# from 2009 — starting earlier just fetches empty months.
+# Both stations long predate this — X4's metadata claims 2006, and Fabra's
+# series began on 6 August 1913 — but the open-data mirror only carries either
+# of them from 2009. Starting earlier just fetches empty months.
+#
+# TODO: Fabra's pre-2009 record needs a different source. Meteocat's CADTEP
+# climate series reaches back to 1950 but is published through the climatology
+# pages rather than this REST API, and 1913–1950 sits with RACAB as digitised
+# material rather than a download. CADTEP is homogenised, so its values will not
+# splice cleanly onto the raw automatic readings here. See the README.
 RECORD_START = date(2009, 1, 1)
 
 # Re-fetch this many days before the newest stored day. The most recent day is
@@ -85,7 +102,12 @@ DEFAULT_SAMPLES = 48
 # discard rain that was actually measured and understate the season by more.
 MIN_COVERAGE = 0.75
 
-OUTPUT_DIR = Path(__file__).resolve().parents[2] / "data" / "xema"
+OUTPUT_ROOT = Path(__file__).resolve().parents[2] / "data" / "xema"
+
+
+def output_dir(code: str) -> Path:
+    """One directory per station, so their season files never collide."""
+    return OUTPUT_ROOT / code
 
 
 def month_starts(start: date, end: date):
@@ -100,8 +122,10 @@ def month_starts(start: date, end: date):
         cursor = nxt
 
 
-def fetch_window(session: requests.Session, start: date, end: date) -> pd.DataFrame:
-    """One month of half-hourly readings for the station.
+def fetch_window(
+    session: requests.Session, code: str, start: date, end: date
+) -> pd.DataFrame:
+    """One month of sub-hourly readings for the station.
 
     Chunked by month on purpose: `$offset` paging needs an `$order`, and
     ordering by `data_lectura` is unindexed and times the query out.
@@ -109,7 +133,7 @@ def fetch_window(session: requests.Session, start: date, end: date) -> pd.DataFr
     response = session.get(
         DATASET,
         params={
-            "codi_estacio": STATION,
+            "codi_estacio": code,
             "$where": (
                 f'data_lectura between "{start:%Y-%m-%d}T00:00:00" '
                 f'and "{end:%Y-%m-%d}T23:59:59"'
@@ -199,7 +223,7 @@ def to_daily(readings: pd.DataFrame) -> pd.DataFrame:
     return daily[[name for name in SERIES_DIGITS if name in daily.columns]]
 
 
-def download(start: date, end: date) -> pd.DataFrame:
+def download(code: str, start: date, end: date) -> pd.DataFrame:
     session = requests.Session()
     token = os.getenv("SOCRATA_APP_TOKEN")
     if token:
@@ -207,7 +231,7 @@ def download(start: date, end: date) -> pd.DataFrame:
 
     chunks = []
     for window_start, window_end in month_starts(start, end):
-        frame = fetch_window(session, window_start, window_end)
+        frame = fetch_window(session, code, window_start, window_end)
         got = 0 if frame.empty else len(frame)
         print(f"  {window_start:%Y-%m} … {got:>6} readings", flush=True)
         if got:
@@ -218,21 +242,15 @@ def download(start: date, end: date) -> pd.DataFrame:
     return to_daily(pd.concat(chunks, ignore_index=True))
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description=f"Fetch XEMA {STATION} daily data.")
-    parser.add_argument(
-        "--full",
-        action="store_true",
-        help=f"Re-download the whole record from {RECORD_START:%Y-%m-%d}.",
-    )
-    parser.add_argument("--start", help="Start date (YYYY-MM-DD); implies a full pass.")
-    parser.add_argument("--end", help="End date (YYYY-MM-DD). Defaults to today.")
-    args = parser.parse_args()
+def run_station(code: str, args) -> None:
+    station = STATIONS[code]
+    directory = output_dir(code)
+    print(f"\n{code} — {station['name']}")
 
     # Readings are timestamped in local Catalan time, but UTC "today" is close
     # enough as an upper bound — the API simply returns nothing beyond the end.
     end = date.fromisoformat(args.end) if args.end else datetime.now(tz=UTC).date()
-    existing = pd.DataFrame() if args.full else load_existing(OUTPUT_DIR)
+    existing = pd.DataFrame() if args.full else load_existing(directory)
 
     if args.start:
         start = date.fromisoformat(args.start)
@@ -249,28 +267,47 @@ def main() -> None:
             print("Already up to date.")
             return
 
-    fresh = download(start, end)
+    fresh = download(code, start, end)
     if fresh.empty and existing.empty:
-        raise SystemExit("No data returned — nothing to write.")
+        raise SystemExit(f"{code}: no data returned — nothing to write.")
 
     combined = merge(fresh, existing)
-
     added = 0 if existing.empty else len(combined.index.difference(existing.index))
     print(f"{len(combined)} days total ({added} new, {len(fresh)} fetched).")
 
-    manifest = write_season_files(combined, OUTPUT_DIR)
+    manifest = write_season_files(combined, directory)
     write_manifest(
         manifest,
-        OUTPUT_DIR,
+        directory,
         location={
-            "name": STATION_NAME,
-            "station": STATION,
-            "latitude": STATION_LAT,
-            "longitude": STATION_LON,
-            "altitude": STATION_ALTITUDE,
+            "name": station["name"],
+            "station": code,
+            "latitude": station["latitude"],
+            "longitude": station["longitude"],
+            "altitude": station["altitude"],
         },
-        source="Meteocat XEMA via Dades Obertes de Catalunya",
+        source=f"Meteocat XEMA {code} via Dades Obertes de Catalunya",
     )
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Fetch XEMA station daily data.")
+    parser.add_argument(
+        "--station",
+        choices=sorted(STATIONS),
+        help="Only fetch this station. Defaults to all of them.",
+    )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help=f"Re-download the whole record from {RECORD_START:%Y-%m-%d}.",
+    )
+    parser.add_argument("--start", help="Start date (YYYY-MM-DD); implies a full pass.")
+    parser.add_argument("--end", help="End date (YYYY-MM-DD). Defaults to today.")
+    args = parser.parse_args()
+
+    for code in [args.station] if args.station else sorted(STATIONS):
+        run_station(code, args)
 
 
 if __name__ == "__main__":

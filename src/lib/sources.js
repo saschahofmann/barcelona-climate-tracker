@@ -1,5 +1,5 @@
 /**
- * The two data sources, and the build-time loader that shapes either one for
+ * The data sources, and the build-time loader that shapes any one of them for
  * the page.
  *
  * Each source gets its own page so only that source's data is inlined — the
@@ -10,29 +10,44 @@ import { SEASON_NAMES } from './season-chart.js';
 
 // Glob patterns have to be literal, so one per source rather than a parameter.
 const MODULES = {
+  fabra: import.meta.glob('../../data/xema/D5/*.json', { eager: true }),
+  raval: import.meta.glob('../../data/xema/X4/*.json', { eager: true }),
   era5: import.meta.glob('../../data/era5/*.json', { eager: true }),
-  xema: import.meta.glob('../../data/xema/*.json', { eager: true }),
 };
 
+// Order here is the order of the nav.
 export const SOURCES = {
+  fabra: {
+    key: 'fabra',
+    label: 'Observatori Fabra weather station',
+    nav: 'Fabra',
+    href: '',
+    blurb:
+      'A hilltop observatory at 410 m on the Collserola ridge above the city ' +
+      '(Meteocat XEMA station D5). Clear of the street-level heat island, which makes it ' +
+      'the steadiest reference of the three: around 2.6 °C cooler than el Raval on ' +
+      'average, yet it holds the hotter record — in a heatwave the ridge escapes the sea ' +
+      'breeze that caps the coast.',
+  },
+  raval: {
+    key: 'raval',
+    label: 'Barcelona - el Raval weather station',
+    nav: 'Raval',
+    href: 'raval',
+    blurb:
+      'A thermometer in the dense middle of the city at 33 m (Meteocat XEMA station ' +
+      'X4). The warmest of the three and the closest to what the street actually ' +
+      'feels like, with occasional gaps where the station dropped out.',
+  },
   era5: {
     key: 'era5',
     label: 'ERA5 reanalysis',
     nav: 'Reanalysis',
-    href: '',
+    href: 'reanalysis',
     blurb:
       'Modelled reanalysis on a grid cell covering the city and the sea beside it. ' +
-      'Complete and gap-free, but around 2 °C cooler than a city-centre thermometer.',
-  },
-  xema: {
-    key: 'xema',
-    label: 'Barcelona - el Raval weather station',
-    nav: 'Station',
-    href: 'station',
-    blurb:
-      'A real thermometer in the middle of the city (Meteocat XEMA station X4). ' +
-      'Warmer than the reanalysis and closer to lived experience, with occasional gaps ' +
-      'where the station dropped out.',
+      'Complete and gap-free, and the only source here reaching back before 2009, but ' +
+      'around 2 °C cooler than a city-centre thermometer.',
   },
 };
 
@@ -51,9 +66,17 @@ function hottestDay(files) {
 
 export function loadSource(key) {
   const modules = MODULES[key];
-  const manifest = modules[`../../data/${key}/index.json`].default;
+  const entries = Object.entries(modules);
 
-  const files = Object.entries(modules)
+  const manifestEntry = entries.find(([path]) => path.endsWith('index.json'));
+  if (!manifestEntry) {
+    throw new Error(
+      `No data found for source "${key}" — run the fetch script for it before building.`
+    );
+  }
+  const manifest = manifestEntry[1].default;
+
+  const files = entries
     .filter(([path]) => !path.endsWith('index.json'))
     .map(([, module]) => module.default);
 

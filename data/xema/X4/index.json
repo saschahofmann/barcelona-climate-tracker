@@ -6,7 +6,7 @@
     "longitude": 2.1679,
     "altitude": 33
   },
-  "source": "Meteocat XEMA via Dades Obertes de Catalunya",
+  "source": "Meteocat XEMA X4 via Dades Obertes de Catalunya",
   "variables": [
     "tasmin",
     "tasmean",

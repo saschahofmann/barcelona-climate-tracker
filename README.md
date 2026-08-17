@@ -65,11 +65,19 @@ Needs `ECMWF_API_KEY` in `.env`.
 pixi run fetch-era5
 ```
 
-## Station data: Barcelona - el Raval (XEMA X4)
+## Station data: Meteocat XEMA
 
-`src/barcelona_climate_tracker/xema_daily.py` downloads the nearest live weather
-station and writes it to `data/xema/` in the **same season-file shape** as ERA5, so the
-two can be compared day for day.
+`src/barcelona_climate_tracker/xema_daily.py` downloads real weather stations and writes
+each to its own directory under `data/xema/`, in the **same season-file shape** as ERA5,
+so any source can be compared against any other day for day.
+
+| Code | Station | Altitude | Directory |
+|---|---|---|---|
+| `D5` | Barcelona - Observatori Fabra | 410 m | `data/xema/D5/` |
+| `X4` | Barcelona - el Raval | 33 m | `data/xema/X4/` |
+
+Fabra sits on the Collserola ridge well above the city; el Raval is in the dense centre.
+Between them and ERA5 they bracket the urban heat island.
 
 ```bash
 pixi run fetch-xema --full
@@ -79,11 +87,15 @@ pixi run fetch-xema --full
 pixi run fetch-xema
 ```
 
-The first is a bulk download of the whole record; the second is incremental — it reads
-the newest day already stored, re-fetches a 7-day trailing window (recent rows are
-unvalidated and get revised, and the newest day is usually partial), merges, and rewrites
-only the season files whose content actually changed. A run with nothing new touches no
-files, so it produces no git diff.
+```bash
+pixi run fetch-xema --station D5
+```
+
+Both stations are fetched unless `--station` names one. The first form is a bulk download
+of the whole record; the second is incremental — it reads the newest day already stored,
+re-fetches a 7-day trailing window (recent rows are unvalidated and get revised, and the
+newest day is usually partial), merges, and rewrites only the season files whose content
+actually changed. A run with nothing new touches no files, so it produces no git diff.
 
 Source is the [Socrata mirror](https://analisi.transparenciacatalunya.cat/Medi-Ambient/Dades-meteorol-giques-de-la-XEMA/nzvn-apee)
 of Meteocat's XEMA network — **no API key needed**. Set `SOCRATA_APP_TOKEN` to lift the
@@ -109,31 +121,103 @@ Things that bite, all learned the hard way:
   measured. Partial rain days are kept and the fetch prints how many there were.
 - A day is dropped only when **every** series is missing. Keying that on temperature
   would throw away good rain data whenever the temperature sensor alone dropped out.
-- The station metadata claims a 2006 start, but the open-data mirror only carries X4
-  **from 2009**.
+- **The mirror starts in 2009 regardless of station age.** X4's metadata claims 2006 and
+  Fabra's series began in 1913, but neither is available through this endpoint before
+  2009 — only ERA5 reaches back further, to 2000. See the note below on Fabra's long
+  series.
 
 Because X4 records true sub-hourly extremes (variables `40`/`42`), its daily max/min are
 real extremes rather than the min/max of spot readings — unlike the ERA5 pipeline, which
 can only sample hourly.
 
-### ERA5 vs the station, measured
+### TODO: Fabra's pre-2009 record, direct from Meteocat
 
-Over 6411 overlapping days (2009-01-01 → 2026-08-02):
+The Socrata mirror this project uses only carries XEMA from **2009**, which throws away
+almost the entire point of Fabra: its series began **6 August 1913** and is the reference
+century-long record for Barcelona. Worth fetching separately.
 
-| series | XEMA X4 | ERA5 | bias | MAE | corr |
-|---|---|---|---|---|---|
-| tasmin | 15.4 | 12.8 | **+2.63** | 2.68 | 0.976 |
-| tasmean | 18.2 | 16.2 | **+2.08** | 2.08 | 0.992 |
-| tasmax | 21.7 | 19.7 | **+1.95** | 1.99 | 0.982 |
-| precipitation | 579 | 628 | −49 mm/yr | | |
+What the landscape looks like, from a first pass — none of it verified against a working
+download yet:
 
-ERA5 runs about **2 °C cold** against a city-centre station, and MAE ≈ |bias| means it is
-almost never warmer — a near-constant offset rather than noise. Correlations of
-0.976–0.992 say the day-to-day signal tracks closely.
+- **Meteocat CADTEP** — continuous, homogenised daily and monthly series, free access,
+  but only back to **1950**. Selected by series then variable through the climatology
+  pages, not the XEMA REST API this project uses. Covers three-quarters of the gap and is
+  the obvious first target.
+- **1913–1950** is not in CADTEP. Fabra's originals belong to the Reial Acadèmia de
+  Ciències i Arts de Barcelona (RACAB), and the pre-1950 material exists through
+  digitisation work rather than an API. Barcelona has instrumental records to 1780 and a
+  rainfall series reconstructed from 1786, so the material is there — it just is not a
+  download.
+- The homogenised CADTEP values will **not** be identical to the raw XEMA automatic
+  readings already stored, so the two cannot simply be concatenated. Either keep them as
+  separate sources or reconcile the overlap deliberately.
 
-So ERA5 is sound for the *relative* comparison the chart does (year against year) but
-reads low in absolute terms. The gap is widest at night (`tasmin`, +2.63), which is what
-an urban heat island against a grid cell averaging coastline and sea should look like.
+Note also that RACAB's **manual** station at Fabra and Meteocat's **automatic** station
+(D5) are different instruments reporting slightly different numbers — see the record
+check below.
+
+### The three sources, measured
+
+Over 6414 days where all three overlap (2009-01-01 → 2026-08-09), daily means in °C:
+
+| series | Fabra (410 m) | Raval (33 m) | ERA5 | Fabra − Raval |
+|---|---|---|---|---|
+| tasmin | 12.5 | 15.4 | 12.8 | **−2.96** |
+| tasmean | 15.7 | 18.3 | 16.2 | **−2.58** |
+| tasmax | 20.4 | 21.7 | 19.7 | **−1.24** |
+| precipitation | 569 | 577 | 626 | mm/yr |
+
+| | record maximum |
+|---|---|
+| Fabra | **40.7 °C** on 2026-07-08 |
+| Raval | 39.3 °C on 2010-08-27 |
+| ERA5 | 34.8 °C on 2023-08-23 |
+
+**Checked against reporting — the pipeline is right, but there are two thermometers.**
+
+The Fabra Observatory hosts *two* stations. RACAB (Reial Acadèmia de Ciències i Arts de
+Barcelona) runs the historic **manual** station, read by an observer, whose series is the
+century-long Barcelona reference. Meteocat runs the **automatic** station **D5**,
+electronic and logging every 30 minutes — that is the one this project fetches, and its
+series only starts in 1995.
+
+They read the same air a few tenths apart, and both set their own record on 2026-07-08:
+
+| | 2024-07-30 | 2026-07-08 |
+|---|---|---|
+| RACAB manual (113-year series) | 40.0 °C | **40.9 °C** |
+| Meteocat automatic D5 (*this data*) | 39.5 °C | **40.7 °C** |
+
+So the headline "Barcelona hits 40.9 °C, hottest in 113 years" is the manual series, which
+is the only one old enough to make a 113-year claim. This project's 40.7 °C is the correct
+automatic value, verified against the raw half-hourly rows: 48/48 samples that day, peak
+at 13:00, nothing dropped by the quality filter. The 2024 pair differ the same way — 40.0
+manual against 39.5 automatic — so do not read the reported previous record as
+contradicting the 39.5 stored here.
+
+Some coverage on the day reported **40.5 °C**, an early figure later revised up.
+
+Incidentally this validates using variable `40` rather than spot readings: on 2026-07-08
+the half-hourly *maximum* peaked at 40.7 °C while the half-hourly *spot* temperature
+(variable `32`) only reached 40.0 °C. Sampling spot values would have understated the
+record by 0.7 °C.
+
+The hero on each page is scoped to the years actually held (`2009–2026`), so it does not
+claim to be an all-time record.
+
+**Fabra is colder on average but records the hotter extreme**, which looks contradictory
+and isn't. The gap is widest at night (−2.96) and narrowest by day (−1.24): the hilltop
+sheds heat after dark and sits outside the city's heat island, while in a heatwave with
+offshore flow it escapes the sea breeze that caps the coastal station. So the daily
+minima separate strongly and the maxima nearly converge — with Fabra overtaking at the
+top end.
+
+Against Raval alone, ERA5 runs about **2 °C cold** (tasmin +2.63, tasmean +2.08,
+tasmax +1.95 for the station over the reanalysis) with correlations of 0.976–0.992 and
+MAE ≈ |bias|, meaning a near-constant offset rather than noise. ERA5 is therefore sound
+for the *relative* comparison the chart does — year against year — but reads low in
+absolute terms against any city thermometer, and its grid cell averaging coastline and
+sea flattens the extremes hardest.
 
 ## Stack
 
@@ -240,20 +324,24 @@ repaints the others. The five slots are validated for colour-vision deficiency a
 contrast in both light and dark mode; three of them fall below 3:1 on the light surface,
 which is why the legend swatches and the table view are not optional.
 
-## Two pages, one per source
+## Three pages, one per source
 
-| Page | Source | Years | Gzipped |
-|---|---|---|---|
-| `/` | ERA5 reanalysis | 2000–2026 | ~54 KB |
-| `/station/` | XEMA X4, el Raval | 2009–2026 | ~36 KB |
+| Page | Source | Years |
+|---|---|---|
+| `/` | XEMA D5, Observatori Fabra | 2009–2026 |
+| `/raval/` | XEMA X4, el Raval | 2009–2026 |
+| `/reanalysis/` | ERA5 reanalysis | 2000–2026 |
+
+**Fabra is the entry point.** It is the least heat-island-affected of the three and the
+steadiest reference, so it is what the site opens on.
 
 The source is a **navigation choice, not a control**, so each page inlines only its own
-data. `src/lib/sources.js` holds both `import.meta.glob` calls — they run in Node during
-the build, so the unselected source never reaches the browser. Verified: no ERA5-only
-year appears in the station page's payload or vice versa.
+data. `src/lib/sources.js` holds one `import.meta.glob` per source — they run in Node
+during the build, so the unselected sources never reach the browser. Verified: no
+source's years appear in another source's payload.
 
-`src/components/SourcePage.astro` is the whole page body; `index.astro` and
-`station.astro` are four-line wrappers that pass a source key.
+`src/components/SourcePage.astro` is the whole page body; `index.astro`, `raval.astro`
+and `reanalysis.astro` are four-line wrappers that pass a source key.
 
 Everything for the selected source is inlined, so switching seasons, measures or years
 costs no network round trip. If a page grows again, the escape hatch is to emit one JSON
