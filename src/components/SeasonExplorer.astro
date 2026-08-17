@@ -10,17 +10,26 @@ import {
   H,
 } from '../lib/season-chart.js';
 
-const { dataset, defaultSeason, defaultYears, defaultMeasure, defaultStat } = Astro.props;
+const {
+  sourceKey,
+  dataEndpoint,
+  index,
+  preloaded,
+  defaultSeason,
+  defaultYears,
+  defaultMeasure,
+  defaultStat,
+} = Astro.props;
 
-const seasonCodes = Object.keys(SEASON_NAMES).filter((code) => dataset[code]);
+const seasonCodes = Object.keys(SEASON_NAMES).filter((code) => index[code]);
 
 // Render the default view at build time so the chart is present before the
 // controls hydrate; the client re-renders through the same functions.
 const initialModel = buildModel({
-  entries: defaultYears.map((year, index) => ({
+  entries: defaultYears.map((year, position) => ({
     year,
-    slot: index + 1,
-    data: dataset[defaultSeason].years[year],
+    slot: position + 1,
+    data: preloaded[defaultSeason][year],
   })),
   focus: defaultYears[0],
   measure: defaultMeasure,
@@ -29,7 +38,7 @@ const initialModel = buildModel({
 const initialSvg = renderSvg(initialModel);
 
 const yearsFor = (code) =>
-  Object.keys(dataset[code].years)
+  Object.keys(index[code].years)
     .map(Number)
     .sort((a, b) => b - a);
 const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - a);
@@ -138,11 +147,14 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     <div class="table-scroll" data-table></div>
   </details>
 
-  <script type="application/json" data-dataset set:html={JSON.stringify(dataset)} />
+  <script type="application/json" data-index set:html={JSON.stringify(index)} />
+  <script type="application/json" data-preloaded set:html={JSON.stringify(preloaded)} />
   <script
     type="application/json"
     data-initial
     set:html={JSON.stringify({
+      source: sourceKey,
+      endpoint: dataEndpoint,
       season: defaultSeason,
       measure: defaultMeasure,
       stat: defaultStat,
@@ -179,6 +191,21 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem;
+  }
+
+  /* Fabra runs from 1913, so the year row can be a hundred chips long. */
+  .chips-years {
+    max-height: 8.5rem;
+    overflow-y: auto;
+  }
+
+  .explorer[data-loading] .chart {
+    opacity: 0.45;
+    transition: opacity 120ms ease;
+  }
+
+  .explorer[data-loading] svg[data-chart] {
+    pointer-events: none;
   }
 
   .chips button {
@@ -559,8 +586,36 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
   const root = document.querySelector('[data-explorer]');
 
   if (root) {
-    const dataset = JSON.parse(root.querySelector('[data-dataset]').textContent);
+    const index = JSON.parse(root.querySelector('[data-index]').textContent);
     const initial = JSON.parse(root.querySelector('[data-initial]').textContent);
+
+    // Season payloads arrive from /data/<source>/<season>.json. The season the
+    // page opened on is already inlined, so the first paint costs no request.
+    const cache = JSON.parse(root.querySelector('[data-preloaded]').textContent);
+    const pending = new Map();
+
+    function loadSeason(code) {
+      if (cache[code]) return Promise.resolve(cache[code]);
+      if (pending.has(code)) return pending.get(code);
+
+      const request = fetch(`${initial.endpoint}/${code}.json`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then((years) => {
+          cache[code] = years;
+          pending.delete(code);
+          return years;
+        })
+        .catch((error) => {
+          pending.delete(code);
+          throw error;
+        });
+
+      pending.set(code, request);
+      return request;
+    }
 
     const svg = root.querySelector('[data-chart]');
     const figure = root.querySelector('.chart');
@@ -595,8 +650,10 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
 
     let model = null;
 
-    const dataFor = (year) => dataset[state.season].years[year];
-    const isAvailable = (year) => Boolean(dataFor(year));
+    // Availability comes from the inlined index, so chips are correct before any
+    // season payload has been fetched.
+    const isAvailable = (year) => Boolean(index[state.season]?.years[year]);
+    const dataFor = (year) => cache[state.season]?.[year];
     const spec = () => measureOf(state.measure);
 
     function freeSlot() {
@@ -606,8 +663,8 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
 
     function entries() {
       return state.selected
-        .filter((entry) => isAvailable(entry.year))
-        .map((entry) => ({ ...entry, data: dataFor(entry.year) }));
+        .map((entry) => ({ ...entry, data: dataFor(entry.year) }))
+        .filter((entry) => entry.data);
     }
 
     /**
@@ -642,13 +699,32 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       render();
     }
 
-    function setSeason(season) {
+    async function setSeason(season) {
       state.season = season;
       // Years absent from the new season drop out, freeing their slots.
       state.selected = state.selected.filter((entry) => isAvailable(entry.year));
       if (!state.selected.some((entry) => entry.year === state.focus)) {
         state.focus = null;
       }
+      // Repaint the controls immediately so the click feels answered, then wait
+      // on the payload.
+      renderControls();
+
+      if (!cache[season]) {
+        root.dataset.loading = '';
+        note.textContent = `Loading ${index[season]?.name ?? season}…`;
+        try {
+          await loadSeason(season);
+        } catch {
+          delete root.dataset.loading;
+          note.textContent = `Could not load ${index[season]?.name ?? season}. Check your connection and try again.`;
+          return;
+        }
+        delete root.dataset.loading;
+      }
+
+      // A later click may have won the race while this payload was in flight.
+      if (state.season !== season) return;
       render();
     }
 
@@ -785,7 +861,9 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     }
 
     function move(event) {
-      if (!model) return;
+      // Mid-load the model still describes the previous season while dataFor()
+      // already points at the new one, so readings would not line up.
+      if (!model || 'loading' in root.dataset) return;
       const rect = svg.getBoundingClientRect();
       if (!rect.width) return;
 

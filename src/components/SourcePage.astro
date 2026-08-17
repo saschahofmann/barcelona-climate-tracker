@@ -11,6 +11,27 @@ const { source, manifest, dataset, defaultSeason, defaultYears, firstYear, lastY
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const link = (href) => `${base}/${href}`.replace(/\/+$/, '') || '/';
+
+// The page ships an index — which years exist per season, and how long each ran —
+// so the year chips and legend render before any data arrives. The heavy value
+// arrays are fetched per season from /data/<source>/<season>.json.
+const index = Object.fromEntries(
+  Object.entries(dataset).map(([code, season]) => [
+    code,
+    {
+      name: season.name,
+      years: Object.fromEntries(
+        Object.entries(season.years).map(([year, entry]) => [
+          year,
+          { start: entry.start, days: entry.days, complete: entry.complete },
+        ])
+      ),
+    },
+  ])
+);
+
+// Only the season the page opens on is inlined; the rest load on demand.
+const preloaded = { [defaultSeason]: dataset[defaultSeason].years };
 ---
 
 <Base
@@ -49,7 +70,10 @@ const link = (href) => `${base}/${href}`.replace(/\/+$/, '') || '/';
   </section>
 
   <SeasonExplorer
-    dataset={dataset}
+    sourceKey={sourceKey}
+    dataEndpoint={`${base}/data/${sourceKey}`}
+    index={index}
+    preloaded={preloaded}
     defaultSeason={defaultSeason}
     defaultYears={defaultYears}
     defaultMeasure="tas"

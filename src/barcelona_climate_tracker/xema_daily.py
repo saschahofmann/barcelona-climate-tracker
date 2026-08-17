@@ -18,6 +18,7 @@ import argparse
 import os
 import sys
 from datetime import UTC, date, datetime, timedelta
+from itertools import pairwise
 from pathlib import Path
 
 import pandas as pd
@@ -79,10 +80,18 @@ VARIABLES = {
     "35": "ppt",  # Precipitation
 }
 
-# `V` is validated and `None` is merely not-yet-validated (recent data, which we
-# want). `T` is the small suspect category — around 0.3% of rows — and is the
-# only state worth dropping. Filtering *to* `V` would discard every recent day.
-REJECTED_STATES = {"T"}
+# Meteocat's validation states: `V` validated, `T` validation started but the
+# result is still pending, blank not yet validated, `N` invalid.
+#
+# Only `N` means bad data — and the open-data mirror publishes none of it (a
+# count over the whole dataset returns 0), so in practice nothing is dropped.
+# The guard stays in case that changes.
+#
+# Rejecting `T` here was a mistake worth recording: it is *pending*, not
+# suspect, and Meteocat applies it to entire days at a time. It silently erased
+# complete 48/48 days such as Fabra's 2025-02-03 and 2025-12-11. Never filter
+# *to* `V` either — that would discard every recent, not-yet-validated day.
+REJECTED_STATES = {"N"}
 
 # Readings per day implied by `codi_base`. X4 reported hourly until partway
 # through 2014 and half-hourly since, so the expected count MUST be derived per
@@ -92,15 +101,26 @@ BASE_SAMPLES = {"HO": 24, "SH": 48}
 DEFAULT_SAMPLES = 48
 
 # Fraction of the day's own expected count needed to publish an average or an
-# extreme. A mean over a handful of night-time samples is a genuinely biased
-# estimate of the day, so it is better withheld.
+# extreme. This is the weaker of the two guards — MAX_GAP_HOURS below is what
+# actually protects the extremes, by rejecting any day with a hole wide enough
+# to hide a peak or a pre-dawn trough. With that in place a day can lose half
+# its readings and still be sound, provided the survivors are spread across it.
 #
 # Precipitation is deliberately NOT gated. It is an accumulation of intervals
 # that really happened, so a short day is a lower bound on observed rain rather
 # than a biased estimate — and withholding it is strictly worse, because a
 # cumulative total treats a missing day as zero either way. Dropping it would
 # discard rain that was actually measured and understate the season by more.
-MIN_COVERAGE = 0.75
+MIN_COVERAGE = 0.50
+
+# A sample count alone is not enough: a day can keep 77% of its readings and
+# still be useless, if the missing quarter is the pre-dawn hours where the
+# minimum happens. Barcelona-Fabra on 2026-08-14 did exactly that — the station
+# came back at 05:30 with the temperature still falling, so the "minimum" was
+# 4 °C above both neighbouring nights. Any hole longer than this may straddle
+# the time an extreme is reached, so the day's averages and extremes are
+# withheld regardless of how many readings survived elsewhere.
+MAX_GAP_HOURS = 3.0
 
 OUTPUT_ROOT = Path(__file__).resolve().parents[2] / "data" / "xema"
 
@@ -178,15 +198,27 @@ def to_daily(readings: pd.DataFrame) -> pd.DataFrame:
     )
     values["expected"] = modal_base.map(BASE_SAMPLES).fillna(DEFAULT_SAMPLES)
 
+    def widest_gap_hours(times: pd.Series) -> float:
+        """Longest stretch of the day with no reading, midnight to midnight."""
+        ordered = times.sort_values()
+        midnight = ordered.iloc[0].normalize()
+        edges = [midnight, *ordered, midnight + pd.Timedelta(days=1)]
+        return max((b - a).total_seconds() for a, b in pairwise(edges)) / 3600.0
+
+    values["gap"] = grouped["timestamp"].agg(widest_gap_hours)
+
     def series(name: str, stat: str, *, gated: bool = True) -> pd.Series:
         if name not in values.index.get_level_values("name"):
             return pd.Series(dtype="float64")
         chunk = values.xs(name, level="name")
         if not gated:
             return chunk[stat]
-        # A day short of its own cadence would bias an average or clip an
-        # extreme, so blank it rather than publish it.
-        return chunk[stat].where(chunk["count"] >= MIN_COVERAGE * chunk["expected"])
+        # A day short of its own cadence, or with a hole wide enough to hide an
+        # extreme, would bias the result — blank it rather than publish it.
+        usable = (chunk["count"] >= MIN_COVERAGE * chunk["expected"]) & (
+            chunk["gap"] <= MAX_GAP_HOURS
+        )
+        return chunk[stat].where(usable)
 
     daily = pd.DataFrame(
         {
@@ -211,7 +243,10 @@ def to_daily(readings: pd.DataFrame) -> pd.DataFrame:
     # letting the understatement pass silently.
     if "ppt" in values.index.get_level_values("name"):
         chunk = values.xs("ppt", level="name")
-        short = chunk[chunk["count"] < MIN_COVERAGE * chunk["expected"]]
+        short = chunk[
+            (chunk["count"] < MIN_COVERAGE * chunk["expected"])
+            | (chunk["gap"] > MAX_GAP_HOURS)
+        ]
         if len(short):
             worst = short.iloc[short["count"].argmin()]
             print(

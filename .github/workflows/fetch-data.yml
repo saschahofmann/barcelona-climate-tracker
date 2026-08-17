@@ -55,6 +55,18 @@ jobs:
         #   SOCRATA_APP_TOKEN: ${{ secrets.SOCRATA_APP_TOKEN }}
         run: pixi run fetch-xema ${{ inputs.full && '--full' || '' }}
 
+      # Rebuilds data/fabra/ — the front page's source — by overlaying the XEMA
+      # data fetched above onto the 1913–2008 history already committed. Without
+      # this the century series would freeze at whatever was last committed.
+      #
+      # No network beyond XEMA: GHCN's Fabra series ended in 2014 and CADTEP only
+      # gains a year at a time, so neither is re-downloaded on a normal run. Use
+      # the manual dispatch with `full` when CADTEP publishes another year.
+      - name: Rebuild Fabra composite
+        id: fabra
+        continue-on-error: true
+        run: pixi run build-fabra ${{ inputs.full && '--refresh-history' || '' }}
+
       - name: Commit new data
         id: commit
         run: |
@@ -74,10 +86,13 @@ jobs:
         run: |
           echo "ERA5:   ${{ steps.era5.outcome }}"  >> "$GITHUB_STEP_SUMMARY"
           echo "XEMA:   ${{ steps.xema.outcome }}"  >> "$GITHUB_STEP_SUMMARY"
+          echo "Fabra:  ${{ steps.fabra.outcome }}" >> "$GITHUB_STEP_SUMMARY"
           echo "Commit: ${{ steps.commit.outputs.changed == 'true' && 'pushed' || 'nothing new' }}" >> "$GITHUB_STEP_SUMMARY"
           # Surface a failed source even though the run already committed
           # whatever the other one produced.
-          if [ "${{ steps.era5.outcome }}" != "success" ] || [ "${{ steps.xema.outcome }}" != "success" ]; then
+          if [ "${{ steps.era5.outcome }}" != "success" ] \
+            || [ "${{ steps.xema.outcome }}" != "success" ] \
+            || [ "${{ steps.fabra.outcome }}" != "success" ]; then
             echo "::error::At least one fetch failed — see the step logs."
             exit 1
           fi

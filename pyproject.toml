@@ -19,6 +19,7 @@ barcelona_climate_tracker = { path = ".", editable = true }
 [tool.pixi.tasks]
 fetch-era5 = "python -m barcelona_climate_tracker.era5_daily"
 fetch-xema = "python -m barcelona_climate_tracker.xema_daily"
+build-fabra = "python -m barcelona_climate_tracker.fabra_historical"
 
 [tool.pixi.dependencies]
 xarray = ">=2026.7.0,<2027"

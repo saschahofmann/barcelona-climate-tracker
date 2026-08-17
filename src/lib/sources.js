@@ -10,7 +10,7 @@ import { SEASON_NAMES } from './season-chart.js';
 
 // Glob patterns have to be literal, so one per source rather than a parameter.
 const MODULES = {
-  fabra: import.meta.glob('../../data/xema/D5/*.json', { eager: true }),
+  fabra: import.meta.glob('../../data/fabra/*.json', { eager: true }),
   raval: import.meta.glob('../../data/xema/X4/*.json', { eager: true }),
   era5: import.meta.glob('../../data/era5/*.json', { eager: true }),
 };
@@ -19,15 +19,16 @@ const MODULES = {
 export const SOURCES = {
   fabra: {
     key: 'fabra',
-    label: 'Observatori Fabra weather station',
+    label: 'Observatori Fabra, full record',
     nav: 'Fabra',
     href: '',
     blurb:
-      'A hilltop observatory at 410 m on the Collserola ridge above the city ' +
-      '(Meteocat XEMA station D5). Clear of the street-level heat island, which makes it ' +
-      'the steadiest reference of the three: around 2.6 °C cooler than el Raval on ' +
-      'average, yet it holds the hotter record — in a heatwave the ridge escapes the sea ' +
-      'breeze that caps the coast.',
+      'A hilltop observatory at 410 m on the Collserola ridge above the city, running ' +
+      'since 1913. Clear of the street-level heat island, which makes it the steadiest ' +
+      'reference here: around 2.6 °C cooler than el Raval on average, yet it holds the ' +
+      'hotter record — in a heatwave the ridge escapes the sea breeze that caps the ' +
+      'coast. Spliced from GHCN-Daily (1913–1949), Meteocat CADTEP (1950–2008) and the ' +
+      'XEMA automatic station D5 (2009 onward); daily means exist only from 2009.',
   },
   raval: {
     key: 'raval',

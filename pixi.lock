@@ -1004,7 +1004,7 @@ packages:
 - pypi: ./
   name: barcelona-climate-tracker
   version: 0.1.0
-  sha256: 35dc2544a7ca85807b1b7dc70fa640ec09b47095d489994425ed85ac2b27b082
+  sha256: 96725d348bdf834faf88020bc9af220f037528a129f9594b74b328ddd279c79e
   requires_python: '>=3.14'
 - conda: https://conda.anaconda.org/conda-forge/noarch/bokeh-3.9.2-pyhd8ed1ab_0.conda
   sha256: 577c2614f3a59512697c1ffe2021c5194818b55f734006fcdeb6c6921b514c44
