@@ -3,12 +3,18 @@
     python -m barcelona_climate_tracker.fabra_historical                    # daily
     python -m barcelona_climate_tracker.fabra_historical --refresh-history  # re-pull
 
-The XEMA feed only reaches back to 2009 — that boundary is Meteocat's, not the
-mirror's, so the official API gains nothing. Two other sources cover the rest:
+Meteocat's daily XEMA series starts when the station did, in November 1995.
+Two other sources cover what came before:
 
     1913-08-06 → 1949-12-31   GHCN-Daily SPE00155259   TX, PPT   (no TN)
-    1950-01-01 → 2008-12-31   Meteocat CADTEP          TX, TN, PPT
-    2009-01-01 → now          XEMA D5                  everything, raw
+    1950-01-01 → 2025-12-31   Meteocat CADTEP          TX, TN, PPT
+    1995-11-04 → now          XEMA D5 daily            everything, incl. mean
+
+The last two overlap on purpose. The station is preferred wherever it has a
+value — it is the raw observation and carries the true daily mean — but it is
+missing TX or TN on roughly 660 days, where CADTEP's gap-filled series still
+has one. Merging per field rather than per day keeps both properties: raw where
+raw exists, no hole where it does not.
 
 Output goes to `data/fabra/`. The raw automatic series in `data/xema/D5/` is left
 untouched, so a pure-measurement view of Fabra stays available.
@@ -19,12 +25,16 @@ history already committed under `data/fabra/` and re-reads only XEMA. Pass
 `--refresh-history` to pull them again, which is worth doing when CADTEP
 publishes another year.
 
-The splice is deliberate rather than assumed: all three overlap the automatic
-series, and the offsets were measured before joining them — GHCN +0.13 °C on
-TX, CADTEP +0.24 °C on TX and +0.30 °C on TN. All are small and in the same
-direction (the manual/homogenised readings sit slightly above the automatic
-station), and none are corrected here — the raw values are kept and the offsets
+The splice is deliberate rather than assumed: both archives overlap the station
+series and the offsets were measured before joining them — GHCN +0.13 °C on TX,
+CADTEP +0.24 °C on TX and +0.30 °C on TN. All are small and in the same
+direction (the manual and homogenised readings sit slightly above the automatic
+station), and none are corrected here — raw values are kept and the offsets
 documented instead.
+
+Where CADTEP and the station overlap the station wins field by field, so a
+CADTEP value only ever appears where the station published none. Those fills
+carry CADTEP's small warm offset, which is the price of not having a gap.
 """
 
 import argparse
@@ -57,7 +67,7 @@ CADTEP_MEMBER = "baic0008d.txt"
 # Each source owns a disjoint slice, newest source wins where they could overlap.
 GHCN_UNTIL = date(1949, 12, 31)
 CADTEP_FROM = date(1950, 1, 1)
-CADTEP_UNTIL = date(2008, 12, 31)
+CADTEP_UNTIL = date(2025, 12, 31)
 
 ROOT = Path(__file__).resolve().parents[2]
 XEMA_DIR = ROOT / "data" / "xema" / "D5"
@@ -121,7 +131,9 @@ def fetch_cadtep() -> pd.DataFrame:
         if len(parts) < 6 or not parts[0].strip().isdigit():
             continue
         year, month, dom = (int(p) for p in parts[:3])
-        if not CADTEP_FROM.year <= year <= CADTEP_UNTIL.year:
+        # Bound by date, not year: the cutoff falls mid-November 1995, where the
+        # station's own record takes over.
+        if not CADTEP_FROM <= date(year, month, dom) <= CADTEP_UNTIL:
             continue
 
         entry = {}
@@ -148,18 +160,17 @@ def main() -> None:
     args = parser.parse_args()
 
     stored = load_existing(OUTPUT_DIR)
-    cutoff = pd.Timestamp(CADTEP_UNTIL)
 
     if args.refresh_history or stored.empty:
-        history = pd.concat([fetch_ghcn(), fetch_cadtep()])
+        base = pd.concat([fetch_ghcn(), fetch_cadtep()])
+        base = base[~base.index.duplicated(keep="last")].sort_index()
     else:
-        # Everything up to the CADTEP cutoff was already built from those two
-        # archives and committed; neither gains days retroactively, so there is
-        # nothing to re-download on a daily run.
-        history = stored[stored.index <= cutoff]
+        # The archives never gain days retroactively, and the previous build
+        # already merged them, so the committed series is the base to build on.
+        base = stored
         print(
-            f"Reusing stored history → {len(history)} days up to {cutoff:%Y-%m-%d} "
-            "(pass --refresh-history to re-download)"
+            f"Reusing stored series → {len(base)} days "
+            "(pass --refresh-history to re-pull the archives)"
         )
 
     xema = load_existing(XEMA_DIR)
@@ -169,10 +180,9 @@ def main() -> None:
         )
     print(f"XEMA D5 (already stored) → {len(xema)} days")
 
-    # Slices are disjoint by construction; concat and let the newest source win
-    # anywhere they were to touch.
-    combined = pd.concat([history, xema])
-    combined = combined[~combined.index.duplicated(keep="last")].sort_index()
+    # Field-level, not row-level: the station wins wherever it published a
+    # value, and the archives fill only what it left empty.
+    combined = xema.combine_first(base).sort_index()
 
     # Neither historical source records a daily mean, and deriving one as
     # (TX+TN)/2 would be wrong to publish: measured against this station's own

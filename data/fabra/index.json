@@ -3435,8 +3435,8 @@
       "season_year": 2020,
       "season": "DJF",
       "start_date": "2019-12-01",
-      "days": 89,
-      "complete": false
+      "days": 91,
+      "complete": true
     },
     {
       "file": "2020-MAM.json",
@@ -3459,8 +3459,8 @@
       "season_year": 2020,
       "season": "SON",
       "start_date": "2020-09-01",
-      "days": 90,
-      "complete": false
+      "days": 91,
+      "complete": true
     },
     {
       "file": "2021-DJF.json",
@@ -3603,8 +3603,8 @@
       "season_year": 2025,
       "season": "MAM",
       "start_date": "2025-03-01",
-      "days": 91,
-      "complete": false
+      "days": 92,
+      "complete": true
     },
     {
       "file": "2025-JJA.json",
@@ -3635,15 +3635,15 @@
       "season_year": 2026,
       "season": "MAM",
       "start_date": "2026-03-01",
-      "days": 92,
-      "complete": true
+      "days": 91,
+      "complete": false
     },
     {
       "file": "2026-JJA.json",
       "season_year": 2026,
       "season": "JJA",
       "start_date": "2026-06-01",
-      "days": 82,
+      "days": 80,
       "complete": false
     }
   ]

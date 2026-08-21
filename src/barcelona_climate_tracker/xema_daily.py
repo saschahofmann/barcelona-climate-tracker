@@ -1,24 +1,33 @@
-"""Download Meteocat XEMA stations and write daily season files.
+"""Download Meteocat XEMA daily station values and write season files.
 
-Runs two ways, over every configured station unless one is named:
+Runs over every configured station unless one is named:
 
     python -m barcelona_climate_tracker.xema_daily                 # incremental
-    python -m barcelona_climate_tracker.xema_daily --full          # bulk, from 2009
+    python -m barcelona_climate_tracker.xema_daily --full          # bulk
     python -m barcelona_climate_tracker.xema_daily --station D5    # just Fabra
 
-Incremental picks up from the newest day already stored, re-fetching a short
-trailing window so the last partial day is corrected once it fills in.
+Source is `7bvh-jvq2`, Meteocat's **daily** XEMA statistics on the Catalonia
+open-data portal. No API key.
 
-Source is the Socrata open-data mirror of Meteocat's XEMA network, which needs
-no API key. An app token lifts the anonymous rate limit; set SOCRATA_APP_TOKEN
-if you have one.
+This replaced an earlier pipeline that pulled the half-hourly feed (`nzvn-apee`)
+and aggregated it here. That was worse in every respect:
+
+  * the half-hourly feed only starts in 2009, while the daily one goes back to
+    each station's own beginning — 1995 for Fabra, 2006 for el Raval;
+  * the half-hourly extract has holes the station itself never had. Fabra on
+    2026-08-14 has no extract rows between 00:00 and 05:00, yet Meteocat's daily
+    record knows the minimum was 26.9 °C at 03:16. Whole days missing from the
+    extract (2025-03-08, 03-09, 04-02) are present and complete here;
+  * aggregating the extract meant inventing coverage thresholds and gap rules to
+    guess which days were trustworthy. Meteocat already publishes that judgement
+    as `estat`, so all of that guesswork is gone;
+  * `1000` is the true daily mean over the full record, not the (TX+TN)/2
+    approximation — Meteocat publishes that separately as `1003`.
 """
 
 import argparse
-import os
 import sys
 from datetime import UTC, date, datetime, timedelta
-from itertools import pairwise
 from pathlib import Path
 
 import pandas as pd
@@ -36,91 +45,46 @@ from barcelona_climate_tracker.seasons import (
 load_dotenv()
 
 # Coordinates and altitudes from the XEMA station metadata (yqwd-vj5e).
+# `start` is the first day this dataset actually carries for the station.
 STATIONS = {
     "D5": {
         "name": "Barcelona - Observatori Fabra",
         "latitude": 41.41864,
         "longitude": 2.12379,
         "altitude": 410,
+        "start": date(1995, 11, 4),
     },
     "X4": {
         "name": "Barcelona - el Raval",
         "latitude": 41.3839,
         "longitude": 2.1679,
         "altitude": 33,
+        "start": date(2006, 10, 11),
     },
 }
 
-DATASET = "https://analisi.transparenciacatalunya.cat/resource/nzvn-apee.json"
+DATASET = "https://analisi.transparenciacatalunya.cat/resource/7bvh-jvq2.json"
 
-# Both stations long predate this — X4's metadata claims 2006, and Fabra's
-# series began on 6 August 1913 — but the open-data mirror only carries either
-# of them from 2009. Starting earlier just fetches empty months.
-#
-# TODO: Fabra's pre-2009 record needs a different source. Meteocat's CADTEP
-# climate series reaches back to 1950 but is published through the climatology
-# pages rather than this REST API, and 1913–1950 sits with RACAB as digitised
-# material rather than a download. CADTEP is homogenised, so its values will not
-# splice cleanly onto the raw automatic readings here. See the README.
-RECORD_START = date(2009, 1, 1)
+# Re-fetch this many days before the newest stored day: recent days are revised,
+# and days absent one morning appear later.
+REFETCH_DAYS = 10
 
-# Re-fetch this many days before the newest stored day. The most recent day is
-# usually partial when first seen, and recent rows are unvalidated and may be
-# revised.
-REFETCH_DAYS = 7
-
-# Variable codes from the XEMA variable metadata (4fb2-n3yi).
+# Daily variable codes → the series names the site uses. `1300` is the
+# midnight-to-midnight rain total; `1301` is the 08–08 h version, which would
+# shift rain onto the wrong day here.
 VARIABLES = {
-    "32": "t",  # Temperature
-    "40": "tmax",  # Half-hourly maximum temperature
-    "42": "tmin",  # Half-hourly minimum temperature
-    "33": "hr",  # Relative humidity
-    "3": "hrmax",  # Half-hourly maximum relative humidity
-    "44": "hrmin",  # Half-hourly minimum relative humidity
-    "35": "ppt",  # Precipitation
+    "1000": "tasmean",
+    "1001": "tasmax",
+    "1002": "tasmin",
+    "1100": "hursmean",
+    "1101": "hursmax",
+    "1102": "hursmin",
+    "1300": "prsum",
 }
 
-# Meteocat's validation states: `V` validated, `T` validation started but the
-# result is still pending, blank not yet validated, `N` invalid.
-#
-# Only `N` means bad data — and the open-data mirror publishes none of it (a
-# count over the whole dataset returns 0), so in practice nothing is dropped.
-# The guard stays in case that changes.
-#
-# Rejecting `T` here was a mistake worth recording: it is *pending*, not
-# suspect, and Meteocat applies it to entire days at a time. It silently erased
-# complete 48/48 days such as Fabra's 2025-02-03 and 2025-12-11. Never filter
-# *to* `V` either — that would discard every recent, not-yet-validated day.
-REJECTED_STATES = {"N"}
-
-# Readings per day implied by `codi_base`. X4 reported hourly until partway
-# through 2014 and half-hourly since, so the expected count MUST be derived per
-# day — a fixed 48 would treat every complete hourly day as half-missing and
-# discard five years of otherwise perfect data.
-BASE_SAMPLES = {"HO": 24, "SH": 48}
-DEFAULT_SAMPLES = 48
-
-# Fraction of the day's own expected count needed to publish an average or an
-# extreme. This is the weaker of the two guards — MAX_GAP_HOURS below is what
-# actually protects the extremes, by rejecting any day with a hole wide enough
-# to hide a peak or a pre-dawn trough. With that in place a day can lose half
-# its readings and still be sound, provided the survivors are spread across it.
-#
-# Precipitation is deliberately NOT gated. It is an accumulation of intervals
-# that really happened, so a short day is a lower bound on observed rain rather
-# than a biased estimate — and withholding it is strictly worse, because a
-# cumulative total treats a missing day as zero either way. Dropping it would
-# discard rain that was actually measured and understate the season by more.
-MIN_COVERAGE = 0.50
-
-# A sample count alone is not enough: a day can keep 77% of its readings and
-# still be useless, if the missing quarter is the pre-dawn hours where the
-# minimum happens. Barcelona-Fabra on 2026-08-14 did exactly that — the station
-# came back at 05:30 with the temperature still falling, so the "minimum" was
-# 4 °C above both neighbouring nights. Any hole longer than this may straddle
-# the time an extreme is reached, so the day's averages and extremes are
-# withheld regardless of how many readings survived elsewhere.
-MAX_GAP_HOURS = 3.0
+# Meteocat's own verdict on whether a daily value represents the day. Roughly
+# 64 values in 225k are flagged otherwise; a blank has simply not been assessed.
+REJECTED_ESTAT = {"No representatiu"}
 
 OUTPUT_ROOT = Path(__file__).resolve().parents[2] / "data" / "xema"
 
@@ -130,146 +94,59 @@ def output_dir(code: str) -> Path:
     return OUTPUT_ROOT / code
 
 
-def month_starts(start: date, end: date):
-    """Inclusive month boundaries covering [start, end]."""
-    cursor = date(start.year, start.month, 1)
-    while cursor <= end:
-        if cursor.month == 12:
-            nxt = date(cursor.year + 1, 1, 1)
-        else:
-            nxt = date(cursor.year, cursor.month + 1, 1)
-        yield max(cursor, start), min(nxt - timedelta(days=1), end)
-        cursor = nxt
+def year_spans(start: date, end: date):
+    """Calendar-year chunks; a year of one station is a few thousand rows."""
+    for year in range(start.year, end.year + 1):
+        yield max(start, date(year, 1, 1)), min(end, date(year, 12, 31))
 
 
-def fetch_window(
+def fetch_span(
     session: requests.Session, code: str, start: date, end: date
 ) -> pd.DataFrame:
-    """One month of sub-hourly readings for the station.
-
-    Chunked by month on purpose: `$offset` paging needs an `$order`, and
-    ordering by `data_lectura` is unindexed and times the query out.
-    """
+    codes = ",".join(f"'{v}'" for v in VARIABLES)
     response = session.get(
         DATASET,
         params={
             "codi_estacio": code,
             "$where": (
-                f'data_lectura between "{start:%Y-%m-%d}T00:00:00" '
-                f'and "{end:%Y-%m-%d}T23:59:59"'
+                f"codi_variable in ({codes}) AND data_lectura between "
+                f"'{start:%Y-%m-%d}T00:00:00' and '{end:%Y-%m-%d}T23:59:59'"
             ),
-            "$select": (
-                "data_lectura,codi_variable,valor_lectura,codi_estat,codi_base"
-            ),
-            "$limit": 200_000,
+            "$select": "data_lectura,codi_variable,valor,estat",
+            "$limit": 50_000,
         },
         timeout=180,
     )
     response.raise_for_status()
     rows = response.json()
-    if not rows:
-        return pd.DataFrame()
-
-    frame = pd.DataFrame(rows)
-    frame = frame[frame["codi_variable"].isin(VARIABLES)]
-    if "codi_estat" in frame.columns:
-        frame = frame[~frame["codi_estat"].isin(REJECTED_STATES)]
-
-    frame["value"] = pd.to_numeric(frame["valor_lectura"], errors="coerce")
-    frame["timestamp"] = pd.to_datetime(frame["data_lectura"])
-    return frame.dropna(subset=["value"])
+    return pd.DataFrame(rows) if rows else pd.DataFrame()
 
 
 def to_daily(readings: pd.DataFrame) -> pd.DataFrame:
-    """Collapse half-hourly readings into the daily series the site expects."""
+    """Pivot one row per (day, variable) into one row per day."""
     if readings.empty:
         return pd.DataFrame()
 
-    readings = readings.assign(
-        name=readings["codi_variable"].map(VARIABLES),
-        day=readings["timestamp"].dt.normalize(),
+    frame = readings[~readings["estat"].isin(REJECTED_ESTAT)].copy()
+    frame["series"] = frame["codi_variable"].map(VARIABLES)
+    frame["value"] = pd.to_numeric(frame["valor"], errors="coerce")
+    frame["day"] = pd.to_datetime(frame["data_lectura"]).dt.normalize()
+    frame = frame.dropna(subset=["value", "series"])
+
+    daily = frame.pivot_table(
+        index="day", columns="series", values="value", aggfunc="last"
     )
-    grouped = readings.groupby(["day", "name"])
-    values = grouped["value"].agg(["mean", "min", "max", "sum", "count"])
-
-    # Expected readings come from the day's own cadence, not a fixed constant.
-    modal_base = grouped["codi_base"].agg(
-        lambda column: column.value_counts().idxmax() if len(column.dropna()) else None
-    )
-    values["expected"] = modal_base.map(BASE_SAMPLES).fillna(DEFAULT_SAMPLES)
-
-    def widest_gap_hours(times: pd.Series) -> float:
-        """Longest stretch of the day with no reading, midnight to midnight."""
-        ordered = times.sort_values()
-        midnight = ordered.iloc[0].normalize()
-        edges = [midnight, *ordered, midnight + pd.Timedelta(days=1)]
-        return max((b - a).total_seconds() for a, b in pairwise(edges)) / 3600.0
-
-    values["gap"] = grouped["timestamp"].agg(widest_gap_hours)
-
-    def series(name: str, stat: str, *, gated: bool = True) -> pd.Series:
-        if name not in values.index.get_level_values("name"):
-            return pd.Series(dtype="float64")
-        chunk = values.xs(name, level="name")
-        if not gated:
-            return chunk[stat]
-        # A day short of its own cadence, or with a hole wide enough to hide an
-        # extreme, would bias the result — blank it rather than publish it.
-        usable = (chunk["count"] >= MIN_COVERAGE * chunk["expected"]) & (
-            chunk["gap"] <= MAX_GAP_HOURS
-        )
-        return chunk[stat].where(usable)
-
-    daily = pd.DataFrame(
-        {
-            "tasmean": series("t", "mean"),
-            # True half-hourly extremes, not the min/max of spot readings.
-            "tasmax": series("tmax", "max"),
-            "tasmin": series("tmin", "min"),
-            "hursmean": series("hr", "mean"),
-            "hursmax": series("hrmax", "max"),
-            "hursmin": series("hrmin", "min"),
-            # Ungated on purpose — see MIN_SAMPLES.
-            "prsum": series("ppt", "sum", gated=False),
-        }
-    )
-
-    # Drop a day only when nothing at all survived. Keying this on temperature
-    # would throw away good rain data whenever the temperature sensor alone
-    # dropped out.
     daily = daily.dropna(how="all")
-
-    # Partial rain days are lower bounds, so say how many there are instead of
-    # letting the understatement pass silently.
-    if "ppt" in values.index.get_level_values("name"):
-        chunk = values.xs("ppt", level="name")
-        short = chunk[
-            (chunk["count"] < MIN_COVERAGE * chunk["expected"])
-            | (chunk["gap"] > MAX_GAP_HOURS)
-        ]
-        if len(short):
-            worst = short.iloc[short["count"].argmin()]
-            print(
-                f"  note: {len(short)} day(s) with partial rain coverage "
-                f"(worst {int(worst['count'])}/{int(worst['expected'])}) — "
-                "totals are lower bounds"
-            )
-
     return daily[[name for name in SERIES_DIGITS if name in daily.columns]]
 
 
 def download(code: str, start: date, end: date) -> pd.DataFrame:
     session = requests.Session()
-    token = os.getenv("SOCRATA_APP_TOKEN")
-    if token:
-        session.headers["X-App-Token"] = token
-
     chunks = []
-    for window_start, window_end in month_starts(start, end):
-        frame = fetch_window(session, code, window_start, window_end)
-        got = 0 if frame.empty else len(frame)
-        print(f"  {window_start:%Y-%m} … {got:>6} readings", flush=True)
-        if got:
+    for span_start, span_end in year_spans(start, end):
+        frame = fetch_span(session, code, span_start, span_end)
+        print(f"  {span_start:%Y} … {len(frame):>6} values", flush=True)
+        if not frame.empty:
             chunks.append(frame)
 
     if not chunks:
@@ -282,15 +159,13 @@ def run_station(code: str, args) -> None:
     directory = output_dir(code)
     print(f"\n{code} — {station['name']}")
 
-    # Readings are timestamped in local Catalan time, but UTC "today" is close
-    # enough as an upper bound — the API simply returns nothing beyond the end.
     end = date.fromisoformat(args.end) if args.end else datetime.now(tz=UTC).date()
     existing = pd.DataFrame() if args.full else load_existing(directory)
 
     if args.start:
         start = date.fromisoformat(args.start)
     elif args.full or existing.empty:
-        start = RECORD_START
+        start = station["start"]
         print(f"Bulk download from {start:%Y-%m-%d}.")
     else:
         newest = existing.index.max().date()
@@ -321,23 +196,19 @@ def run_station(code: str, args) -> None:
             "longitude": station["longitude"],
             "altitude": station["altitude"],
         },
-        source=f"Meteocat XEMA {code} via Dades Obertes de Catalunya",
+        source=f"Meteocat XEMA {code} daily values via Dades Obertes de Catalunya",
     )
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Fetch XEMA station daily data.")
+    parser = argparse.ArgumentParser(description="Fetch XEMA daily station data.")
     parser.add_argument(
         "--station",
         choices=sorted(STATIONS),
         help="Only fetch this station. Defaults to all of them.",
     )
-    parser.add_argument(
-        "--full",
-        action="store_true",
-        help=f"Re-download the whole record from {RECORD_START:%Y-%m-%d}.",
-    )
-    parser.add_argument("--start", help="Start date (YYYY-MM-DD); implies a full pass.")
+    parser.add_argument("--full", action="store_true", help="Re-download everything.")
+    parser.add_argument("--start", help="Start date (YYYY-MM-DD).")
     parser.add_argument("--end", help="End date (YYYY-MM-DD). Defaults to today.")
     args = parser.parse_args()
 
