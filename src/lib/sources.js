@@ -27,8 +27,8 @@ export const SOURCES = {
       'since 1913. Clear of the street-level heat island, which makes it the steadiest ' +
       'reference here: around 2.6 °C cooler than el Raval on average, yet it holds the ' +
       'hotter record — in a heatwave the ridge escapes the sea breeze that caps the ' +
-      'coast. Spliced from GHCN-Daily (1913–1949), Meteocat CADTEP (1950–2008) and the ' +
-      'XEMA automatic station D5 (2009 onward); daily means exist only from 2009.',
+      'coast. Spliced from GHCN-Daily (1913–1949), Meteocat CADTEP (1950–2025) and the ' +
+      'XEMA automatic station D5 (1995 onward); daily means start in 1995.',
   },
   raval: {
     key: 'raval',
@@ -46,9 +46,10 @@ export const SOURCES = {
     nav: 'Reanalysis',
     href: 'reanalysis',
     blurb:
-      'Modelled reanalysis on a grid cell covering the city and the sea beside it. ' +
-      'Complete and gap-free, and the only source here reaching back before 2009, but ' +
-      'around 2 °C cooler than a city-centre thermometer.',
+      'Modelled reanalysis on a grid cell covering the city and the sea beside it, ' +
+      '2000 onward. Gap-free by construction, but around 2 °C cooler than a ' +
+      'city-centre thermometer, and its cell averages coastline and sea, which ' +
+      'flattens the extremes.',
   },
 };
 

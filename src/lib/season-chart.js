@@ -42,6 +42,24 @@ export const STATS = [
   { key: 'max', label: 'Maximum' },
 ];
 
+/**
+ * How much detail to plot. All of this is arithmetic on the daily arrays the
+ * page already holds — no different data is fetched for any of it.
+ *
+ * `smooth` is a centred rolling mean that keeps one point per day; `bucket`
+ * groups whole days and collapses each group. They look similar at 7 days and
+ * are not: smoothing keeps 365 points and the shape, bucketing gives 52 and
+ * shifts the extremes inward.
+ */
+export const DETAILS = [
+  { key: 'daily', label: 'Daily' },
+  { key: 'smooth7', label: '7-day average', smooth: 7 },
+  { key: 'weekly', label: 'Weekly', bucket: 7 },
+  { key: 'monthly', label: 'Monthly', bucket: 'month' },
+];
+
+export const detailOf = (key) => DETAILS.find((d) => d.key === key) ?? DETAILS[0];
+
 export const SEASON_NAMES = {
   DJF: 'Winter',
   MAM: 'Spring',
@@ -75,6 +93,56 @@ export const xAt = (i, maxDays) =>
 export const makeScale = (domain) => (value) =>
   PAD.top + (1 - (value - domain.min) / (domain.max - domain.min)) * PLOT_H;
 
+/**
+ * Centred rolling mean. A window that is more than half empty yields null
+ * rather than an average of whatever happened to survive, so a station outage
+ * stays a hole instead of being papered over.
+ */
+export function smoothSeries(values, window) {
+  const half = Math.floor(window / 2);
+  return values.map((_, i) => {
+    let sum = 0;
+    let seen = 0;
+    for (let j = i - half; j <= i + half; j++) {
+      const v = values[j];
+      if (j >= 0 && j < values.length && v != null) {
+        sum += v;
+        seen += 1;
+      }
+    }
+    return seen > window / 2 ? sum / seen : null;
+  });
+}
+
+/**
+ * Group whole days and collapse each group. `how` follows the statistic's own
+ * meaning: a weekly maximum is the hottest day of that week, not the average of
+ * its afternoons — which keeps the low–high band an actual envelope.
+ */
+export function bucketSeries(values, dates, bucket, how) {
+  const groups = new Map();
+  values.forEach((value, i) => {
+    const iso = dates[i];
+    const key =
+      bucket === 'month' ? iso.slice(0, 7) : Math.floor(i / bucket);
+    if (!groups.has(key)) groups.set(key, { at: i, values: [] });
+    if (value != null) groups.get(key).values.push(value);
+  });
+
+  const out = [];
+  for (const { at, values: group } of groups.values()) {
+    let value = null;
+    if (group.length) {
+      if (how === 'min') value = Math.min(...group);
+      else if (how === 'max') value = Math.max(...group);
+      else if (how === 'sum') value = group.reduce((a, b) => a + b, 0);
+      else value = group.reduce((a, b) => a + b, 0) / group.length;
+    }
+    out.push({ value, at });
+  }
+  return out;
+}
+
 /** The plotted series for one year: a running total for rain, else the stat. */
 export function seriesValues(data, measure, stat) {
   if (measureOf(measure).cumulative) {
@@ -88,47 +156,92 @@ export const formatValue = (value, measure) =>
   value == null ? '—' : value.toFixed(measureOf(measure).digits);
 
 /**
+ * Re-express one year's daily arrays at the requested detail, and hand back the
+ * dates that go with them. Everything downstream — paths, band, tooltip, table —
+ * reads this view, so nothing else has to know whether it is looking at days,
+ * weeks or months.
+ */
+export function applyDetail(data, measure, detail) {
+  const spec = measureOf(measure);
+  const mode = detailOf(detail);
+  // The year view supplies its own dates: its slots skip 29 February, so they
+  // are not simply `start + i`.
+  const dates =
+    data.dates ?? Array.from({ length: data.days }, (_, i) => addDays(data.start, i));
+  const fields = spec.stats ? ['min', 'mean', 'max'] : ['sum'];
+
+  // Smoothing a running total is meaningless — the curve is monotonic already —
+  // so rain falls back to daily rather than pretending to offer it.
+  const smoothing = mode.smooth && !spec.cumulative;
+  if (!smoothing && !mode.bucket) return { ...data, dates };
+
+  if (smoothing) {
+    const out = {};
+    for (const f of fields) out[f] = smoothSeries(data[measure][f], mode.smooth);
+    return { ...data, dates, [measure]: out };
+  }
+
+  const out = {};
+  let at = null;
+  for (const f of fields) {
+    // A weekly minimum is the coldest night of that week, not the average one;
+    // rain is a total. Each field collapses by its own meaning.
+    const how = spec.cumulative ? 'sum' : f;
+    const grouped = bucketSeries(data[measure][f], dates, mode.bucket, how);
+    out[f] = grouped.map((g) => g.value);
+    at ??= grouped.map((g) => dates[g.at]);
+  }
+  return {
+    ...data,
+    days: at.length,
+    start: at[0],
+    dates: at,
+    [measure]: out,
+  };
+}
+
+/**
  * @param entries  [{ year, slot, data }] in the order they should be drawn
  * @param focus    year whose low–high band is shown, or null for no band
- * @param measure  'tas' | 'hurs' | 'pr'
+ * @param measure  'tas' | 'pr'
  * @param stat     'min' | 'mean' | 'max' — ignored when the measure has no stats
+ * @param detail   'daily' | 'smooth7' | 'weekly' | 'monthly'
  */
-export function buildModel({ entries, focus, measure, stat }) {
+export function buildModel({ entries, focus, measure, stat, detail = 'daily' }) {
   if (entries.length === 0) return null;
 
   const spec = measureOf(measure);
+  const views = entries.map((entry) => applyDetail(entry.data, measure, detail));
+
   // Focus is genuinely optional: clicking the front year clears it, leaving
   // every series plotted with no band at all.
-  const focusEntry = focus == null ? null : (entries.find((e) => e.year === focus) ?? null);
-  const maxDays = Math.max(...entries.map((entry) => entry.data.days));
+  const focusIndex = focus == null ? -1 : entries.findIndex((e) => e.year === focus);
+  const focusView = focusIndex >= 0 ? views[focusIndex] : null;
+  const maxDays = Math.max(...views.map((view) => view.days));
 
-  const plotted = entries.map((entry) => seriesValues(entry.data, measure, stat));
+  const plotted = views.map((view) => seriesValues(view, measure, stat));
 
   // The band is the focus year's full low–high, so the domain has to cover it
   // even when the plotted stat is narrower. Rain has no band, nor does an
   // unfocused chart.
-  const banded = spec.stats && focusEntry !== null;
+  const banded = spec.stats && focusView !== null;
   const values = [
     ...plotted.flat(),
-    ...(banded ? focusEntry.data[measure].min : []),
-    ...(banded ? focusEntry.data[measure].max : []),
+    ...(banded ? focusView[measure].min : []),
+    ...(banded ? focusView[measure].max : []),
   ].filter((value) => value != null && Number.isFinite(value));
 
   // Every selected year could be nothing but gaps for this measure.
   if (values.length === 0) return null;
 
   // A running total starts at zero, so anchor the axis there rather than
-  // floating it at the first day's rainfall.
-  const scale = niceTicks(
-    spec.cumulative ? 0 : Math.min(...values),
-    Math.max(...values),
-    5
-  );
+  // floating it at the first period's rainfall.
+  const scale = niceTicks(spec.cumulative ? 0 : Math.min(...values), Math.max(...values), 5);
   const y = makeScale(scale);
   const x = (i) => xAt(i, maxDays);
 
-  // Station records have gaps, so a null lifts the pen and the line resumes at
-  // the next reading rather than drawing a straight lie across the outage.
+  // Records have gaps, so a null lifts the pen and the line resumes at the next
+  // reading rather than drawing a straight lie across the outage.
   const linePath = (series) => {
     let path = '';
     let pen = 'M';
@@ -145,15 +258,14 @@ export function buildModel({ entries, focus, measure, stat }) {
 
   let bandPath = '';
   if (banded) {
-    const focusDays = focusEntry.data.days;
-    const highs = focusEntry.data[measure].max;
-    const lows = focusEntry.data[measure].min;
+    const highs = focusView[measure].max;
+    const lows = focusView[measure].min;
 
     // One closed subpath per unbroken run, so a gap splits the band instead of
-    // closing it across the missing days.
+    // closing it across the missing periods.
     const runs = [];
     let run = [];
-    for (let i = 0; i < focusDays; i++) {
+    for (let i = 0; i < focusView.days; i++) {
       if (highs[i] == null || lows[i] == null) {
         if (run.length) runs.push(run);
         run = [];
@@ -177,31 +289,41 @@ export function buildModel({ entries, focus, measure, stat }) {
       .join('');
   }
 
-  // Month boundaries. Every year shares the same month/day at a given index,
-  // so any entry can supply the labels.
-  const spine = entries.find((entry) => entry.data.days === maxDays) ?? entries[0];
+  // Month boundaries, taken from whichever view spans the most of the period.
+  const spine = views.find((view) => view.days === maxDays) ?? views[0];
   const monthTicks = [];
-  for (let i = 0; i < maxDays; i++) {
-    const iso = addDays(spine.data.start, i);
-    if (iso.endsWith('-01')) monthTicks.push({ x: r2(x(i)), label: monthOf(iso) });
-  }
+  let lastMonth = null;
+  spine.dates.forEach((iso, i) => {
+    const month = iso.slice(0, 7);
+    if (month !== lastMonth) {
+      monthTicks.push({ x: r2(x(i)), label: monthOf(iso) });
+      lastMonth = month;
+    }
+  });
 
-  // The end marker rides the last *reading*, which is not the last slot when a
-  // record trails off into missing days.
-  const lastReading = (values) => {
-    for (let i = values.length - 1; i >= 0; i--) {
-      if (values[i] != null) return i;
+  // The end marker rides the last *reading*, not the last slot, when a record
+  // trails off into missing periods.
+  const lastReading = (series) => {
+    for (let i = series.length - 1; i >= 0; i--) {
+      if (series[i] != null) return i;
     }
     return -1;
   };
 
   const series = entries.map((entry, index) => {
+    const view = views[index];
     const lastIndex = lastReading(plotted[index]);
     return {
       year: entry.year,
       slot: entry.slot,
-      isFocus: focusEntry !== null && entry.year === focusEntry.year,
-      days: entry.data.days,
+      isFocus: focusView !== null && index === focusIndex,
+      days: view.days,
+      dates: view.dates,
+      // Carried on the model so the tooltip and table never re-derive them and
+      // never disagree with what was drawn.
+      values: plotted[index],
+      low: spec.stats ? view[measure].min : null,
+      high: spec.stats ? view[measure].max : null,
       path: linePath(plotted[index]),
       hasData: lastIndex >= 0,
       endX: lastIndex >= 0 ? r2(x(lastIndex)) : 0,
@@ -212,14 +334,13 @@ export function buildModel({ entries, focus, measure, stat }) {
   return {
     measure,
     stat,
+    detail,
     suffix: spec.suffix,
     banded,
     cumulative: Boolean(spec.cumulative),
     maxDays,
-    focus: focusEntry === null ? null : focusEntry.year,
-    // Only day-and-month is ever shown, and every entry shares those, so any
-    // series can date the axis when no year is focused.
-    dateStart: (focusEntry ?? entries[0]).data.start,
+    focus: focusView === null ? null : entries[focusIndex].year,
+    dates: spine.dates,
     domain: scale,
     ticks: scale.ticks,
     monthTicks,
@@ -228,6 +349,7 @@ export function buildModel({ entries, focus, measure, stat }) {
     baselineY: PAD.top + PLOT_H,
   };
 }
+
 
 /** SVG inner markup. Every value here is a number or a year, so no escaping. */
 export function renderSvg(model) {

@@ -5,10 +5,16 @@ import {
   MAX_YEARS,
   MEASURES,
   STATS,
+  DETAILS,
   SEASON_NAMES,
   W,
   H,
 } from '../lib/season-chart.js';
+
+// A pseudo-season covering the calendar year. It is assembled in the browser
+// from the four real seasons, so it needs no extra data of its own — but note
+// that December comes from the *next* winter file, since DJF 2026 is Dec 2025.
+const YEAR = 'YEAR';
 
 const {
   sourceKey,
@@ -19,9 +25,11 @@ const {
   defaultYears,
   defaultMeasure,
   defaultStat,
+  defaultDetail,
 } = Astro.props;
 
-const seasonCodes = Object.keys(SEASON_NAMES).filter((code) => index[code]);
+const seasonCodes = [...Object.keys(SEASON_NAMES).filter((code) => index[code]), YEAR];
+const seasonLabel = { ...SEASON_NAMES, [YEAR]: 'Whole year' };
 
 // Render the default view at build time so the chart is present before the
 // controls hydrate; the client re-renders through the same functions.
@@ -34,6 +42,7 @@ const initialModel = buildModel({
   focus: defaultYears[0],
   measure: defaultMeasure,
   stat: defaultStat,
+  detail: defaultDetail,
 });
 const initialSvg = renderSvg(initialModel);
 
@@ -41,7 +50,8 @@ const yearsFor = (code) =>
   Object.keys(index[code].years)
     .map(Number)
     .sort((a, b) => b - a);
-const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - a);
+// YEAR is assembled client-side and has no index entry of its own.
+const allYears = [...new Set(Object.keys(index).flatMap(yearsFor))].sort((a, b) => b - a);
 ---
 
 <section class="card explorer" data-explorer>
@@ -62,7 +72,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
               data-season={code}
               aria-pressed={code === defaultSeason ? 'true' : 'false'}
             >
-              {SEASON_NAMES[code]}
+              {seasonLabel[code]}
             </button>
           ))
         }
@@ -80,6 +90,23 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
               aria-pressed={measure.key === defaultMeasure ? 'true' : 'false'}
             >
               {measure.label}
+            </button>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="control">
+      <span class="control-label" id="detail-label">Detail</span>
+      <div class="chips" role="group" aria-labelledby="detail-label">
+        {
+          DETAILS.map((detail) => (
+            <button
+              type="button"
+              data-detail={detail.key}
+              aria-pressed={detail.key === defaultDetail ? 'true' : 'false'}
+            >
+              {detail.label}
             </button>
           ))
         }
@@ -158,7 +185,10 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       season: defaultSeason,
       measure: defaultMeasure,
       stat: defaultStat,
+      detail: defaultDetail,
       years: defaultYears,
+      seasonCodes,
+      seasonLabel,
     })}
   />
 </section>
@@ -567,15 +597,16 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     buildModel,
     renderSvg,
     makeScale,
-    seriesValues,
     formatValue,
     measureOf,
+    detailOf,
     xAt,
     addDays,
     dayOf,
     MAX_YEARS,
     MEASURES,
     STATS,
+    DETAILS,
     SEASON_NAMES,
     SERIES_SLOTS,
     W,
@@ -628,6 +659,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     const seasonButtons = [...root.querySelectorAll('[data-season]')];
     const measureButtons = [...root.querySelectorAll('[data-measure]')];
     const statButtons = [...root.querySelectorAll('[data-stat]')];
+    const detailButtons = [...root.querySelectorAll('[data-detail]')];
     const statControl = root.querySelector('[data-stat-control]');
     // Scoped to the chip row: the chart's own <path class="line"> elements also
     // carry data-year, and an unscoped selector would bind handlers to SVG
@@ -639,10 +671,71 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       [...root.querySelectorAll('[data-chip]')].map((chip) => [Number(chip.dataset.chip), chip])
     );
 
+    const YEAR = 'YEAR';
+    const REAL_SEASONS = Object.keys(index);
+    const isLeap = (y) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+
+    /**
+     * Stitch one calendar year together from the season files. December comes
+     * from the *following* winter, since DJF 2026 is Dec 2025 + Jan/Feb 2026 —
+     * so a year needs five season-years, not four.
+     */
+    // Days before each month in a common (non-leap) year.
+    const MONTH_OFFSET = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+
+    function assembleYear(year) {
+      // A fixed 365-slot calendar with 29 February dropped. Placing the leap
+      // day at its natural index would shift March onwards by one in leap years
+      // only, so overlaying 2024 on 2025 would compare adjacent days — the same
+      // trap the season files avoid by parking the leap day at the end of DJF.
+      const LENGTH = 365;
+      const blank = () => new Array(LENGTH).fill(null);
+      const out = {
+        start: `${year}-01-01`,
+        days: LENGTH,
+        complete: true,
+        dates: Array.from({ length: LENGTH }, (_, slot) => {
+          let month = 11;
+          while (month > 0 && MONTH_OFFSET[month] > slot) month -= 1;
+          const day = slot - MONTH_OFFSET[month] + 1;
+          return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        }),
+        tas: { min: blank(), mean: blank(), max: blank() },
+        pr: { sum: blank() },
+      };
+
+      let seen = 0;
+      for (const code of REAL_SEASONS) {
+        // December belongs to the *following* winter file: DJF 2026 is
+        // Dec 2025 + Jan/Feb 2026, so a year needs five season-years, not four.
+        for (const seasonYear of [year, year + 1]) {
+          const data = cache[code]?.[seasonYear];
+          if (!data) continue;
+          for (let i = 0; i < data.days; i++) {
+            const iso = addDays(data.start, i);
+            if (!iso.startsWith(`${year}-`)) continue;
+            const month = Number(iso.slice(5, 7));
+            const day = Number(iso.slice(8, 10));
+            if (month === 2 && day === 29) continue;
+            const slot = MONTH_OFFSET[month - 1] + day - 1;
+            out.tas.min[slot] = data.tas.min[i];
+            out.tas.mean[slot] = data.tas.mean[i];
+            out.tas.max[slot] = data.tas.max[i];
+            out.pr.sum[slot] = data.pr.sum[i];
+            seen += 1;
+          }
+        }
+      }
+      if (!seen) return null;
+      out.complete = seen >= LENGTH;
+      return out;
+    }
+
     const state = {
       season: initial.season,
       measure: initial.measure,
       stat: initial.stat,
+      detail: initial.detail,
       // Ordered oldest-selected first; each entry keeps its colour slot.
       selected: initial.years.map((year, index) => ({ year, slot: index + 1 })),
       focus: initial.years[0],
@@ -652,8 +745,18 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
 
     // Availability comes from the inlined index, so chips are correct before any
     // season payload has been fetched.
-    const isAvailable = (year) => Boolean(index[state.season]?.years[year]);
-    const dataFor = (year) => cache[state.season]?.[year];
+    const isAvailable = (year) =>
+      state.season === YEAR
+        ? REAL_SEASONS.some((code) => index[code]?.years[year])
+        : Boolean(index[state.season]?.years[year]);
+
+    const yearCache = new Map();
+    function dataFor(year) {
+      if (state.season !== YEAR) return cache[state.season]?.[year];
+      const key = `${year}`;
+      if (!yearCache.has(key)) yearCache.set(key, assembleYear(year));
+      return yearCache.get(key);
+    }
     const spec = () => measureOf(state.measure);
 
     function freeSlot() {
@@ -710,14 +813,18 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       // on the payload.
       renderControls();
 
-      if (!cache[season]) {
+      // The year view is stitched from all four seasons, so it needs all four.
+      const needed = (season === YEAR ? REAL_SEASONS : [season]).filter((c) => !cache[c]);
+      if (needed.length) {
+        const label = initial.seasonLabel?.[season] ?? season;
         root.dataset.loading = '';
-        note.textContent = `Loading ${index[season]?.name ?? season}…`;
+        note.textContent = `Loading ${label}…`;
         try {
-          await loadSeason(season);
+          await Promise.all(needed.map(loadSeason));
+          yearCache.clear();
         } catch {
           delete root.dataset.loading;
-          note.textContent = `Could not load ${index[season]?.name ?? season}. Check your connection and try again.`;
+          note.textContent = `Could not load ${label}. Check your connection and try again.`;
           return;
         }
         delete root.dataset.loading;
@@ -765,9 +872,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
         current.series.map((series) => `<th scope="col">${series.year}</th>`).join('') +
         '</tr>';
 
-      const columns = current.series.map((series) =>
-        seriesValues(dataFor(series.year), state.measure, state.stat)
-      );
+      const columns = current.series.map((series) => series.values);
 
       const rows = [];
       for (let i = 0; i < current.maxDays; i++) {
@@ -775,7 +880,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
           .map((values) => `<td>${formatValue(values[i], state.measure)}</td>`)
           .join('');
         rows.push(
-          `<tr><th scope="row">${dayOf(addDays(current.dateStart, i))}</th>${cells}</tr>`
+          `<tr><th scope="row">${dayOf(current.dates[i])}</th>${cells}</tr>`
         );
       }
 
@@ -799,6 +904,19 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       statButtons.forEach((button) =>
         button.setAttribute('aria-pressed', String(button.dataset.stat === state.stat))
       );
+      // Smoothing a running total does nothing, so rather than let the chip
+      // look active while the chart ignores it, take the option away.
+      const smoothable = !spec().cumulative;
+      detailButtons.forEach((button) => {
+        const mode = DETAILS.find((d) => d.key === button.dataset.detail);
+        const usable = smoothable || !mode?.smooth;
+        button.disabled = !usable;
+        button.title = usable ? '' : 'Not applicable to a running total';
+        button.setAttribute(
+          'aria-pressed',
+          String(usable && button.dataset.detail === state.detail)
+        );
+      });
       // A daily total has no min/mean/max to choose between.
       statControl.hidden = !spec().stats;
 
@@ -836,6 +954,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
         focus: state.focus,
         measure: state.measure,
         stat: state.stat,
+        detail: state.detail,
       });
       svg.innerHTML = renderSvg(model);
 
@@ -877,8 +996,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       const measure = spec();
 
       const rows = model.series.map((series, index) => {
-        const data = dataFor(series.year);
-        const value = seriesValues(data, state.measure, state.stat)[i];
+        const value = series.values[i];
         const dot = dots[index];
 
         if (value == null) {
@@ -891,12 +1009,12 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
 
         let extra = '';
         if (measure.cumulative) {
-          // The running total is what's plotted, so name the day's own rain too.
-          const daily = data.pr.sum[i];
-          extra = daily ? ` (+${formatValue(daily, state.measure)})` : '';
-        } else if (series.isFocus) {
-          const low = formatValue(data[state.measure].min[i], state.measure);
-          const high = formatValue(data[state.measure].max[i], state.measure);
+          // The plotted line is a running total, so name what this period added.
+          const added = value - (i > 0 ? (series.values[i - 1] ?? value) : 0);
+          extra = added ? ` (+${formatValue(added, state.measure)})` : '';
+        } else if (series.isFocus && series.low && series.high) {
+          const low = formatValue(series.low[i], state.measure);
+          const high = formatValue(series.high[i], state.measure);
           extra = ` (${low}–${high})`;
         }
 
@@ -912,7 +1030,7 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
       crossLine.setAttribute('x2', x);
       figure.classList.add('is-active');
       tooltip.hidden = false;
-      tooltip.innerHTML = `<strong>${dayOf(addDays(model.dateStart, i))}</strong>${rows.join('')}`;
+      tooltip.innerHTML = `<strong>${dayOf(model.dates[i])}</strong>${rows.join('')}`;
 
       const half = tooltip.offsetWidth / 2;
       const px = (x / W) * rect.width;
@@ -930,12 +1048,23 @@ const allYears = [...new Set(seasonCodes.flatMap(yearsFor))].sort((a, b) => b - 
     measureButtons.forEach((button) =>
       button.addEventListener('click', () => {
         state.measure = button.dataset.measure;
+        // Leaving a smoothing mode selected under a running total would show a
+        // pressed chip that does nothing; fall back to daily.
+        if (measureOf(state.measure).cumulative && detailOf(state.detail).smooth) {
+          state.detail = 'daily';
+        }
         render();
       })
     );
     statButtons.forEach((button) =>
       button.addEventListener('click', () => {
         state.stat = button.dataset.stat;
+        render();
+      })
+    );
+    detailButtons.forEach((button) =>
+      button.addEventListener('click', () => {
+        state.detail = button.dataset.detail;
         render();
       })
     );

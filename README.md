@@ -302,25 +302,59 @@ committed, and *then* the job fails so the failure stays visible.
 ## The chart
 
 `src/lib/season-chart.js` holds the model builder and SVG renderer. Astro calls it at
-build time to emit the default view; the browser calls the same functions to re-render
-on interaction, so build and runtime output cannot drift.
+build time to emit the default view; the browser calls the same functions to re-render on
+interaction, so build and runtime output cannot drift.
 
-Controls: season (4), measure (temperature / precipitation), series
-(mean / minimum / maximum), and up to **5 years** from 2000–2026. Clicking a year brings
-it to the front — it gets the daily low–high band and a heavier stroke. Selection is
-purely additive; removal is the × on a selected chip, or "Clear all". Each chip is a
-wrapper holding two buttons, since a button cannot nest inside another button.
+Controls: **season** (four, plus *Whole year*), **measure** (temperature / precipitation),
+**detail** (daily / 7-day average / weekly / monthly), **series** (mean / min / max) and up
+to **5 years**. Clicking a year brings it to the front — it gets the daily low–high band
+and a heavier stroke — and clicking it again drops the band without removing the series.
+Removal is the × on a chip, or "Clear all".
 
-**Precipitation is plotted cumulatively** across the season, and the series control
-hides for it. A daily total has no min/mean/max to choose between, and five years of
-spiky daily rainfall overlaid is unreadable — running totals stay comparable and answer
-the actual question ("is this year running wet or dry?"). The day's own rainfall is in
-the tooltip as `+x`.
-
-Each selected year holds a colour slot until it is deselected, so removing one year never
+Each selected year holds a colour slot until deselected, so removing one year never
 repaints the others. The five slots are validated for colour-vision deficiency and
-contrast in both light and dark mode; three of them fall below 3:1 on the light surface,
-which is why the legend swatches and the table view are not optional.
+contrast in both modes.
+
+### Detail: smoothing and resampling, all client-side
+
+None of these fetch anything. The page already holds daily arrays; the rest is arithmetic:
+
+| mode | what it does | points over a season |
+|---|---|---|
+| Daily | raw | ~92 |
+| 7-day average | centred rolling mean | ~92 |
+| Weekly | groups 7 days | ~13 |
+| Monthly | groups calendar months | 3 |
+
+Smoothing and weekly bucketing look similar and are not: smoothing keeps one point per
+day and the shape, bucketing gives 13 points and pulls the extremes inward.
+
+Two rules that matter:
+
+- **A rolling window more than half empty yields null**, not an average of whatever
+  survived, so a station outage stays a hole instead of being papered over.
+- **Buckets collapse by the statistic's own meaning** — a weekly maximum is the hottest
+  day of that week, not the average of its afternoons. That keeps the low–high band an
+  actual envelope.
+
+Smoothing is **disabled for precipitation**: the line is a running total, so a rolling
+mean of it means nothing. The chip greys out rather than looking active while the chart
+ignores it.
+
+### The whole-year view
+
+*Whole year* is assembled in the browser from the four season files — it needs no data of
+its own, but it does need all four loaded, so selecting it fetches whichever are missing.
+
+Two things it has to get right:
+
+- **December comes from the following winter file.** DJF 2026 is Dec 2025 + Jan/Feb 2026,
+  so building calendar year 2026 needs five season-years, not four.
+- **29 February is dropped.** Placing the leap day at its natural index shifts March
+  onwards by one in leap years only, so overlaying 2024 on 2025 would silently compare
+  adjacent days. A fixed 365-slot common-year calendar keeps every year aligned; the leap
+  day is still present in the DJF season view, where the season files park it last.
+
 
 ## Three pages, one per source
 
