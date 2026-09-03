@@ -661,6 +661,14 @@
       "start_date": "2026-06-01",
       "days": 92,
       "complete": true
+    },
+    {
+      "file": "2026-SON.json",
+      "season_year": 2026,
+      "season": "SON",
+      "start_date": "2026-09-01",
+      "days": 1,
+      "complete": false
     }
   ]
 }
