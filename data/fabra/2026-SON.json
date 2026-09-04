@@ -2,7 +2,7 @@
   "season_year": 2026,
   "season": "SON",
   "start_date": "2026-09-01",
-  "days": 1,
+  "days": 2,
   "complete": false,
   "units": {
     "tas": "degC",
@@ -10,27 +10,35 @@
     "pr": "mm"
   },
   "time": [
-    "2026-09-01"
+    "2026-09-01",
+    "2026-09-02"
   ],
   "tasmin": [
-    21.2
+    21.2,
+    21.7
   ],
   "tasmean": [
-    23.6
+    23.6,
+    26.1
   ],
   "tasmax": [
-    28.4
+    28.4,
+    33.6
   ],
   "hursmin": [
-    50
+    50,
+    29
   ],
   "hursmean": [
-    71
+    71,
+    57
   ],
   "hursmax": [
-    87
+    87,
+    88
   ],
   "prsum": [
+    0.0,
     0.0
   ]
 }
